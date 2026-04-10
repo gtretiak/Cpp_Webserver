@@ -47,25 +47,25 @@ make re      # fclean + all
 ## Resources
 
 ### HTTP
-RFC 1945 – HTTP/1.0 - https://datatracker.ietf.org/doc/html/rfc1945
-RFC 2616 – HTTP/1.1 - https://datatracker.ietf.org/doc/html/rfc2616
-RFC 7230–7235 – HTTP/1.1 (updated) - https://datatracker.ietf.org/doc/html/rfc7230
-MDN Web Docs – HTTP - https://developer.mozilla.org/en-US/docs/Web/HTTP
+- RFC 1945 – HTTP/1.0 - https://datatracker.ietf.org/doc/html/rfc1945
+- RFC 2616 – HTTP/1.1 - https://datatracker.ietf.org/doc/html/rfc2616
+- RFC 7230–7235 – HTTP/1.1 (updated) - https://datatracker.ietf.org/doc/html/rfc7230
+- MDN Web Docs – HTTP - https://developer.mozilla.org/en-US/docs/Web/HTTP
 
 ### NGINX
-NGINX documentation - https://nginx.org/en/docs/
+- NGINX documentation - https://nginx.org/en/docs/
 
 ### CGI
-RFC 3875 – The Common Gateway Interface (CGI) - https://datatracker.ietf.org/doc/html/rfc3875
+- RFC 3875 – The Common Gateway Interface (CGI) - https://datatracker.ietf.org/doc/html/rfc3875
 
 ### POSIX / Sockets
-Beej's Guide to Network Programming - https://beej.us/guide/bgnet/
-POSIX man pages (man 2 socket, man 2 poll, etc.)
+- Beej's Guide to Network Programming - https://beej.us/guide/bgnet/
+- POSIX man pages (man 2 socket, man 2 poll, etc.)
 
 ### Stress Testing
-siege - https://www.joedog.org/siege-home/
-wrk - https://github.com/wg/wrk
-ApacheBench (ab) - https://httpd.apache.org/docs/2.4/programs/ab.html
+- siege - https://www.joedog.org/siege-home/
+- wrk - https://github.com/wg/wrk
+- ApacheBench (ab) - https://httpd.apache.org/docs/2.4/programs/ab.html
 
 ### AI Usage
 AI (specifically a large language model assistant) was used during this project for the
