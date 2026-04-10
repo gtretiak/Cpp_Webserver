@@ -104,7 +104,7 @@ through agreed interfaces.
 
 ---
 
-## Developer 1 — Core Networking & Event Loop
+## Developer 1 (Nayara) — Core Networking & Event Loop
 
 **Responsibility:** Everything that touches sockets, file descriptors, and the poll loop.
 
@@ -125,7 +125,7 @@ yet understanding HTTP.
 
 ---
 
-## Developer 2 — HTTP Layer (Parser, Router, Response Builder)
+## Developer 2 (George) — HTTP Layer (Parser, Router, Response Builder)
 
 **Responsibility:** Everything that turns raw bytes into HTTP meaning and back.
 
@@ -145,7 +145,7 @@ returns a fully formed HTTP response string, based on configuration.
 
 ---
 
-## Developer 3 — Configuration, CGI & File System
+## Developer 3 (Douglas) — Configuration, CGI & File System
 
 **Responsibility:** Everything that requires reading the config and touching the
 filesystem or spawning processes.
