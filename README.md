@@ -104,24 +104,24 @@ through agreed interfaces.
 
 ---
 
-## Developer 1 (Nayara) — Core Networking & Event Loop
+## Developer 1 (Douglas) — Configuration, CGI & File System
 
-**Responsibility:** Everything that touches sockets, file descriptors, and the poll loop.
+**Responsibility:** Everything that requires reading the config and touching the
+filesystem or spawning processes.
 
-- Socket creation, binding, listening (`socket`, `bind`, `listen`, `accept`)
-- Setting sockets non-blocking (`fcntl`)
-- The single `poll()` (or `epoll`/`kqueue`) event loop
-- Connection lifecycle management (open, read-ready, write-ready, close)
-- Raw byte-level reading from and writing to client sockets (`recv`, `send`)
-- Buffer management per connection
-- Timeout / hang-prevention logic
-- Signal handling (`signal`, `kill`)
-- Low-level address utilities (`getaddrinfo`, `freeaddrinfo`, `setsockopt`,
-  `getsockname`, `getprotobyname`, `htons`, `htonl`, `ntohs`, `ntohl`)
+- Configuration file parser (server blocks, location blocks, all directives)
+- Virtual host support (server name matching)
+- CGI execution: `fork`, `execve`, `pipe`, `dup2`, `waitpid`, environment variable
+  setup, stdout reading, EOF detection, timeout
+- File system operations: `open`, `read`, `write`, `close`, `stat`, `access`,
+  `opendir`, `readdir`, `closedir`, `chdir`
+- File upload storage (writing uploaded bodies to disk)
+- Integration of CGI output back into the HTTP response pipeline
+- Default configuration path fallback
+- Providing annotated example configuration files and default test pages
 
-**Deliverables:** A working event loop that accepts connections, reads raw bytes into
-per-connection buffers, and writes bytes from per-connection output buffers — without
-yet understanding HTTP.
+**Deliverables:** A config object that Developer 1 and 2 query, plus a CGI subsystem
+that Developer 2 calls when the router determines CGI is needed.
 
 ---
 
@@ -145,24 +145,24 @@ returns a fully formed HTTP response string, based on configuration.
 
 ---
 
-## Developer 3 (Douglas) — Configuration, CGI & File System
+## Developer 3 (Nayara) — Core Networking & Event Loop
 
-**Responsibility:** Everything that requires reading the config and touching the
-filesystem or spawning processes.
+**Responsibility:** Everything that touches sockets, file descriptors, and the poll loop.
 
-- Configuration file parser (server blocks, location blocks, all directives)
-- Virtual host support (server name matching)
-- CGI execution: `fork`, `execve`, `pipe`, `dup2`, `waitpid`, environment variable
-  setup, stdout reading, EOF detection, timeout
-- File system operations: `open`, `read`, `write`, `close`, `stat`, `access`,
-  `opendir`, `readdir`, `closedir`, `chdir`
-- File upload storage (writing uploaded bodies to disk)
-- Integration of CGI output back into the HTTP response pipeline
-- Default configuration path fallback
-- Providing annotated example configuration files and default test pages
+- Socket creation, binding, listening (`socket`, `bind`, `listen`, `accept`)
+- Setting sockets non-blocking (`fcntl`)
+- The single `poll()` (or `epoll`/`kqueue`) event loop
+- Connection lifecycle management (open, read-ready, write-ready, close)
+- Raw byte-level reading from and writing to client sockets (`recv`, `send`)
+- Buffer management per connection
+- Timeout / hang-prevention logic
+- Signal handling (`signal`, `kill`)
+- Low-level address utilities (`getaddrinfo`, `freeaddrinfo`, `setsockopt`,
+  `getsockname`, `getprotobyname`, `htons`, `htonl`, `ntohs`, `ntohl`)
 
-**Deliverables:** A config object that Developer 1 and 2 query, plus a CGI subsystem
-that Developer 2 calls when the router determines CGI is needed.
+**Deliverables:** A working event loop that accepts connections, reads raw bytes into
+per-connection buffers, and writes bytes from per-connection output buffers — without
+yet understanding HTTP.
 
 ---
 
