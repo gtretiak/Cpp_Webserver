@@ -1,4 +1,7 @@
-*This project has been created as part of the 42 curriculum by dopereir (GitHub: rach3bartmoss), gtretiak (GitHub: gtretiak), and nogioni- (GitHub: ).*
+*This project has been created as part of the 42 curriculum by:
+- dopereir (GitHub: rach3bartmoss);
+- gtretiak (GitHub: gtretiak);
+- nogioni- (GitHub: ).*
 
 # Webserv
 
