@@ -111,13 +111,14 @@ through agreed interfaces.
 - Socket creation, binding, listening (`socket`, `bind`, `listen`, `accept`)
 - Setting sockets non-blocking (`fcntl`)
 - The single `poll()` (or `epoll`/`kqueue`) event loop
-- Connection lifecycle management (open, read-ready, write-ready, close)
-- Raw byte-level reading from and writing to client sockets (`recv`, `send`)
-- Buffer management per connection
+- Connection lifecycle management (open, read-ready, write-ready, close). The poll set is dynamic. Connections open and close constantly; the array of pollfd structs must be managed carefully without invalidating iterators mid-loop.
+- Raw byte-level reading from and writing to client sockets (`recv`, `send`). The mental model of "do not call recv unless poll says so" requires discipline throughout the entire codebase.
+- Correct buffer management per connection across multiple poll iterations. Partial reads and partial writes are unavoidable and a request may arrive in five separate recv calls.
 - Timeout / hang-prevention logic
-- Signal handling (`signal`, `kill`)
+- Signal handling (`signal`, `kill`). SIGPIPE, SIGCHLD, and SIGINT must be handled correctly without interfering with the poll loop.
 - Low-level address utilities (`getaddrinfo`, `freeaddrinfo`, `setsockopt`,
   `getsockname`, `getprotobyname`, `htons`, `htonl`, `ntohs`, `ntohl`)
+- Errors. A bug here (a blocking call, a leaked fd, a missed POLLHUP) does not just crash one request - it hangs or crashes the entire server. 
 
 **Deliverables:** A working event loop that accepts connections, reads raw bytes into
 per-connection buffers, and writes bytes from per-connection output buffers — without
@@ -127,11 +128,11 @@ yet understanding HTTP.
 
 ## Developer 2 (George) — HTTP Layer (Parser, Router, Response Builder)
 
-**Responsibility:** Everything that turns raw bytes into HTTP meaning and back.
+**Responsibility:** Everything that turns raw bytes into HTTP meaning and back. The challenge is correctness and completeness — there are many subtle cases in the RFC that are easy to miss, and browsers are unforgiving about malformed responses. 
 
-- HTTP request parser (request line, headers, body, chunked decoding)
-- HTTP response builder (status line, headers, body)
-- Router: matches a parsed request to a configured location/route
+- HTTP request parser (request line, headers, body, chunked transfer decoding). Request parsing has many edge cases (malformed headers, chunked bodies, partial reads).
+- Accurate HTTP response builder (correct status line (status codes), mandatory headers, body, MIME types).
+- Router: matches a parsed request to a configured location/route. The router must correctly implement longest-prefix matching.
 - Method handlers: GET (static files, directory listing), POST (body collection),
   DELETE (file deletion)
 - MIME type detection
@@ -148,14 +149,14 @@ returns a fully formed HTTP response string, based on configuration.
 ## Developer 3 (Douglas) — Configuration, CGI & File System
 
 **Responsibility:** Everything that requires reading the config and touching the
-filesystem or spawning processes.
+filesystem or spawning processes. The main challenge is getting CGI right (pipe management, zombie prevention, timeouts)
 
 - Configuration file parser (server blocks, location blocks, all directives)
 - Virtual host support (server name matching)
-- CGI execution: `fork`, `execve`, `pipe`, `dup2`, `waitpid`, environment variable
-  setup, stdout reading, EOF detection, timeout
+- CGI execution (fixed, well-defined sequence): `pipe`, `fork`, `dup2`, environment variable, `execve`, `waitpid`. The RFC 3875 tells exactly which environment variables to set.
+- setup, stdout reading, EOF detection, timeout
 - File system operations: `open`, `read`, `write`, `close`, `stat`, `access`,
-  `opendir`, `readdir`, `closedir`, `chdir`
+  `opendir`, `readdir`, `closedir`, `chdir`. Errors are local — e.g. a failed open() affects one request, not the whole server.
 - File upload storage (writing uploaded bodies to disk)
 - Integration of CGI output back into the HTTP response pipeline
 - Default configuration path fallback
