@@ -1,0 +1,83 @@
+the project is most focused on the server {} context block, by now we'll implement
+code jsut for server and location block.
+
+link: https://nginx.org/en/docs/http/ngx_http_core_module.html#server
+
+link to all directives requires by the subject in the end.
+
+each server{} block defines one website/service. Key directives are:
+- listen
+- error_page
+- client_max_body_size
+
+INSIDE the server {} block we can have the location {} context block, nested.
+basically overrides directives from the parent server block. Key directives are:
+(directives below are present in both server and location context)
+
+- root ->			filesystem root for this route
+- alias ->			alterative path
+- autoindex ->			directory listing (?)
+- index ->			default file for directories
+- limit_except ->		restrict allowed HTTP methods
+- server_name ->		sets a name for the virtual server (NOT MANDATORY)-> https://nginx.org/en/docs/http/ngx_http_core_module.html#server_name
+
+directives: directives are the actual configuration settings for a context. They act like variables to define a behavior in the server.
+example:
+server {
+	listen	80;	# this directive defines the ports to be opened
+	listen	8080;	# the server block can have multiple ports to listen
+	
+}
+NOTE ABOUT LISTEN DIRECTIVE:
+	the listen directive can have four 'forms' to listen to:
+		- port				example: (8080, 443, etc...)
+		- IP + port 			example: (127.0.0.1:8080, 123.123.123.2:8080 )
+		- hostname + port		example: (localhost:9000)
+		- unix socket			example: (unix:/tmp/nginx.sock)
+
+	to represent this look inside the serverConfig.hpp the struct Listen {}
+	but basically we define a 'type', a 'string' and a 'int' since this is all that we need.
+	
+
+INHERITANCE, directives defined in a parent context are inherited by the child contexts.
+but it can be overridden locally. For example, client_max_body_size set in server applies
+to all its location blocks unless a location redefines it.
+
+current config file parser flow:
+
+1. open/validate and read conf file
+
+2. tokenize
+
+3. recursive descent parser
+- server block must handle all the directives. but the location block can override it.
+- parse the tokens to fill the data structure
+
+4. returns a globalConfig type, contains a vector with the servers configurations:
+
+	struct	globalConfig {
+		std::vector<serverConfig>	servers;
+	};
+	
+	
+	
+	globalConfig
+	└── serverConfig[]
+	     ├── directives (listen, error_pages, ...)
+	     └── LocationConfig[]
+		   └── directives (root, index, methods, ...)
+
+link to directives documentation:
+
+link: https://nginx.org/en/docs/http/ngx_http_core_module.html#listen
+link: https://nginx.org/en/docs/http/ngx_http_core_module.html#error_page
+link: https://nginx.org/en/docs/http/ngx_http_core_module.html#client_max_body_size
+link: https://nginx.org/en/docs/http/ngx_http_core_module.html#limit_except
+link: https://nginx.org/en/docs/http/ngx_http_core_module.html#absolute_redirect
+link: https://nginx.org/en/docs/http/ngx_http_core_module.html#location
++
+link: https://nginx.org/en/docs/http/ngx_http_core_module.html#root
+link: https://nginx.org/en/docs/http/ngx_http_core_module.html#alias
+link: https://nginx.org/en/docs/http/ngx_http_autoindex_module.html#autoindex
+link: https://nginx.org/en/docs/http/ngx_http_index_module.html#index
+
