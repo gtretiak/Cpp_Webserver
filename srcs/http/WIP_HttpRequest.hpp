@@ -5,8 +5,10 @@ class	HttpRequest {
 	private:
 		std::string	method;
 		std::string	path;
+		std::string	query;
+		std::string	version;
 		std::string	body;
-		std::string	*headers;
+		std::map<std::string, std::string>	headers;
 };
 
 #endif
