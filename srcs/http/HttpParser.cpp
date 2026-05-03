@@ -6,7 +6,7 @@
 /*   By: gtretiak <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/27 10:42:25 by gtretiak          #+#    #+#             */
-/*   Updated: 2026/05/03 16:15:49 by gtretiak         ###   ########.fr       */
+/*   Updated: 2026/05/03 19:06:35 by gtretiak         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -275,9 +275,7 @@ bool	HttpParser::isRequestComplete(const Connection &conn) const {
 		size_t	start = clPos + 18;
 		while (start < LnH.size() && LnH[start] == ' ')
 			start++;
-		if (buf.substr(headerEnd + 4).find("0\r\n\r\n") == std::string::npos)
-			return (false);
-		return (true);
+		return (buf.find("0\r\n\r\n", headerEnd + 4) != std::string::npos);
 	}
 	return (false);
 }
