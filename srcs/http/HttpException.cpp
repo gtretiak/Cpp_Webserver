@@ -1,11 +1,9 @@
 #include "HttpException.hpp"
 
-class	HttpException : public std::exception {
-	private:
-		int		code_;
-		std::string	msg_;
 HttpException::HttpException(int code, const std::string &msg) : code_(code), msg_(msg) {}
 const char	*HttpException::what() const throw() {
+	return (this->msg_.c_str());
 }
 int	HttpException::code() const {
+	return (this->code_);
 }

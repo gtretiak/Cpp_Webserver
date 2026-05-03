@@ -1,6 +1,8 @@
 #ifndef HTTPEXCEPTION_HPP
 #define HTTPEXCEPTION_HPP
 
+#include <string>
+
 class	HttpException : public std::exception {
 	private:
 		int		code_;
@@ -9,6 +11,7 @@ class	HttpException : public std::exception {
 		HttpException(int code, const std::string &msg);
 		const char* what() const throw();
 		int code() const;
+		virtual ~HttpException() throw() {};
 };
 
 #endif

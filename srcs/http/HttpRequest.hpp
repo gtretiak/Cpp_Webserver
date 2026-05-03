@@ -1,8 +1,10 @@
 #ifndef HTTPREQUEST_HPP
 #define HTTPREQUEST_HPP
+#include <map>
+#include <string>
 
 class	HttpRequest {
-	private:
+	public:
 		std::string	method;
 		std::string	path;
 		std::string	query;
