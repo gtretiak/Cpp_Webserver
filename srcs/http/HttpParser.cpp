@@ -6,7 +6,7 @@
 /*   By: gtretiak <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/27 10:42:25 by gtretiak          #+#    #+#             */
-/*   Updated: 2026/05/03 15:16:06 by gtretiak         ###   ########.fr       */
+/*   Updated: 2026/05/03 16:15:49 by gtretiak         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -189,20 +189,30 @@ void	HttpParser::parseBody(std::string &buf, HttpRequest *req) {
 		       throw HttpException(400, "Bad Request");
 		req->body = buf.substr(0, len);
 	}
-/*	else
+	else // chunked
 	{
 		std::string	res;
 		size_t	i = 0;
 		while (true)
 		{
 			size_t	lineEnd = buf.find("\r\n", i);
-			int	chunkSize = std::strtolbuf.substr(i, pos - 1);
+			if (lineEnd == std::string::npos)
+				throw HttpException(400, "Bad Request");
+			int	chunkSize = std::strtol(buf.substr(i, lineEnd - i).c_str(), NULL, 16);
+			if (chunkSize == 0)
+				break ;
+			i = lineEnd + 2;
+			if (i + chunkSize > buf.size())
+				throw HttpException(400, "Bad Request");
+			res += buf.substr(i, chunkSize);
+			i += chunkSize + 2;
 		}
 		req->body = res;
-	}*/
+	}
 }
 
-void	HttpParser::parseRequest(std::string &buf, HttpRequest *req) {
+size_t	HttpParser::parseRequest(std::string &buf, HttpRequest *req) {
+	size_t	size = 0;
 	*req = HttpRequest();
 	size_t	i = buf.find("\r\n");
 	if (i == std::string::npos)
@@ -212,13 +222,26 @@ void	HttpParser::parseRequest(std::string &buf, HttpRequest *req) {
 	size_t	j = buf.find("\r\n\r\n");
 	if (j == std::string::npos)
 		throw HttpException(400, "Bad Request");
+	size = j + 4;
 	std::string	header = buf.substr(i + 2, j - (i + 2));
 	parseHeaders(header, req);
-	if (req->headers.count("content-length") || req->headers.count("transfer-encoding"))
+	if (req->headers.count("content-length"))
 	{
-		std::string	body = buf.substr(j + 4);
+		int	len = std::atoi(req->headers["content-length"].c_str());
+		std::string	body = buf.substr(j + 4, len);
 		parseBody(body, req);
+		size += len;
 	}
+	else if (req->headers.count("transfer-encoding"))
+	{
+		size_t	bodyEnd = buf.find("0\r\n\r\n", j + 4);
+		if (bodyEnd == std::string::npos)
+			throw HttpException(400, "Bad Request");
+		std::string	body = buf.substr(j + 4, bodyEnd - (j + 4) + 5);
+		parseBody(body, req);
+		size = bodyEnd + 5;
+	}
+	return (size);
 }
 
 bool	HttpParser::isRequestComplete(const Connection &conn) const {
