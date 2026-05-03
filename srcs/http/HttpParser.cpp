@@ -6,7 +6,7 @@
 /*   By: gtretiak <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/27 10:42:25 by gtretiak          #+#    #+#             */
-/*   Updated: 2026/05/03 19:06:35 by gtretiak         ###   ########.fr       */
+/*   Updated: 2026/05/03 21:15:31 by gtretiak         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,8 @@
 #include <vector>
 #include "Connection.hpp"
 #include <iostream>
+
+HttpParser::HttpParser() {}
 
 static std::string	normalize(const std::string &url) {
 	std::string	res = "/";
@@ -87,44 +89,44 @@ static std::string	decode(const std::string &url) {
 	return (res);
 }
 
-void	HttpParser::parseLine(std::string &buf, HttpRequest *req) {
+void	HttpParser::parseLine(const std::string &buf, HttpRequest *req) {
 	size_t	i = 0;
 	size_t	j;
 	while (buf[i] && buf[i] != ' ')
-		req->method += buf[i++];
-	if (req->method != "DELETE" && req->method != "GET" && req->method != "POST")
+		req->setMethod(req->getMethod() + buf[i++]);
+	if (req->getMethod() != "DELETE" && req->getMethod() != "GET" && req->getMethod() != "POST")
 		throw HttpException(405, "Method Not Allowed");
 	while (buf[i] && buf[i] == ' ')
 		i++;
 	if (!buf[i])
 		throw HttpException(400, "Bad Request");
 	while (buf[i] && buf[i] != ' ')
-		req->path += buf[i++];
-	if (req->path.empty())
+		req->setPath(req->getPath() + buf[i++]);
+	if (req->getPath().empty())
 		throw HttpException(400, "Bad Request");
-	if (req->path.find("http://") == 0)
+	if (req->getPath().find("http://") == 0)
 	{
-		size_t	pos = req->path.find("/", 7);
+		size_t	pos = req->getPath().find("/", 7);
 		if (pos == std::string::npos)
-			req->path = "/";
+			req->setPath("/");
 		else
-			req->path = req->path.substr(pos);
+			req->setPath(req->getPath().substr(pos));
 	}
-	req->path = decode(req->path);
-	req->path = normalize(req->path);
-	j = req->path.find("?");
+	req->setPath(decode(req->getPath()));
+	req->setPath(normalize(req->getPath()));
+	j = req->getPath().find("?");
 	if (j != std::string::npos)
 	{
-		req->query = req->path.substr(j + 1);
-		req->path = req->path.substr(0, j);
+		req->setQuery(req->getPath().substr(j + 1));
+		req->setPath(req->getPath().substr(0, j));
 	}
 	while (buf[i] && buf[i] == ' ')
 		i++;
 	if (!buf[i])
 		throw HttpException(400, "Bad Request");
 	while (buf[i] && buf[i] != ' ')
-		req->version += buf[i++];
-	if (req->version != "HTTP/1.0" && req->version != "HTTP/1.1")
+		req->setVersion(req->getVersion() + buf[i++]);
+	if (req->getVersion() != "HTTP/1.0" && req->getVersion() != "HTTP/1.1")
 		throw HttpException(400, "Bad Request");
 }
 
@@ -154,18 +156,18 @@ void	HttpParser::parseHeaders(std::string &buf, HttpRequest *req) {
 			value.erase(0, 1);
 		while (!value.empty() && value[value.size() - 1] == ' ') // to remove trailing spaces
 			value.erase(value.size() - 1, 1);
-		req->headers[key] = value;
+		req->setHeader(key, value);
 		start = end + 2;
 	}
-	if (req->version == "HTTP/1.1" && req->headers.find("host") == req->headers.end())
+	if (req->getVersion() == "HTTP/1.1" && !req->hasHeader("host"))
 		throw HttpException(400, "Bad Request");
-	bool	hasCL = req->headers.count("content-length");
-	bool	hasTE = req->headers.count("transfer-encoding");
+	bool	hasCL = req->hasHeader("content-length");
+	bool	hasTE = req->hasHeader("transfer-encoding");
 	if (hasCL && hasTE)
 		throw HttpException(400, "Bad Request");
 	if (hasCL)
 	{
-		const std::string	&len = req->headers["content-length"];
+		const std::string	&len = req->getHeader("content-length");
 		if (len.empty())
 			throw HttpException(400, "Bad Request");
 		for (size_t i = 0; i < len.size(); i++)
@@ -176,18 +178,18 @@ void	HttpParser::parseHeaders(std::string &buf, HttpRequest *req) {
 	}
 	if (hasTE)
 	{
-		if (req->headers["transfer-encoding"] != "chunked")
+		if (req->getHeader("transfer-encoding") != "chunked")
 			throw HttpException(501, "Not Implemented");
 	}	
 }
 
 void	HttpParser::parseBody(std::string &buf, HttpRequest *req) {
-	if (req->headers.count("content-length"))
+	if (req->hasHeader("content-length"))
 	{
-		int	len = std::atoi(req->headers["content-length"].c_str());
+		int	len = std::atoi(req->getHeader("content-length").c_str());
 		if (len < 0 || (size_t)len > buf.size())
 		       throw HttpException(400, "Bad Request");
-		req->body = buf.substr(0, len);
+		req->setBody(buf.substr(0, len));
 	}
 	else // chunked
 	{
@@ -207,7 +209,7 @@ void	HttpParser::parseBody(std::string &buf, HttpRequest *req) {
 			res += buf.substr(i, chunkSize);
 			i += chunkSize + 2;
 		}
-		req->body = res;
+		req->setBody(res);
 	}
 }
 
@@ -217,22 +219,22 @@ size_t	HttpParser::parseRequest(std::string &buf, HttpRequest *req) {
 	size_t	i = buf.find("\r\n");
 	if (i == std::string::npos)
 		throw HttpException(400, "Bad Request");
-	std::string	line = buf.substr(0, i);
-	parseLine(line, req);
+	req->setUrl(buf.substr(0, i));
+	parseLine(req->getUrl(), req);
 	size_t	j = buf.find("\r\n\r\n");
 	if (j == std::string::npos)
 		throw HttpException(400, "Bad Request");
 	size = j + 4;
 	std::string	header = buf.substr(i + 2, j - (i + 2));
 	parseHeaders(header, req);
-	if (req->headers.count("content-length"))
+	if (req->hasHeader("content-length"))
 	{
-		int	len = std::atoi(req->headers["content-length"].c_str());
+		int	len = std::atoi(req->getHeader("content-length").c_str());
 		std::string	body = buf.substr(j + 4, len);
 		parseBody(body, req);
 		size += len;
 	}
-	else if (req->headers.count("transfer-encoding"))
+	else if (req->hasHeader("transfer-encoding"))
 	{
 		size_t	bodyEnd = buf.find("0\r\n\r\n", j + 4);
 		if (bodyEnd == std::string::npos)
@@ -279,3 +281,5 @@ bool	HttpParser::isRequestComplete(const Connection &conn) const {
 	}
 	return (false);
 }
+
+HttpParser::~HttpParser() {}

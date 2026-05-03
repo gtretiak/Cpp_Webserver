@@ -1,5 +1,7 @@
 #include "StatusCodes.hpp"
 
+StatusCodes::StatusCodes() {}
+
 static const std::string	&StatusCodes::getStatus(int code) {
 	switch (code)
 	{
@@ -29,3 +31,5 @@ static const std::string	&StatusCodes::getStatus(int code) {
 		default: return "Unknown";
 	}
 }
+
+StatusCodes::~StatusCodes() {}

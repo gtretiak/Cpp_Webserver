@@ -43,14 +43,15 @@ int main() {
 		"\r\n"; // 400 - broken line
 	try {
 		parser.parseRequest(raw, &req); // change raw to raw2, raw3, etc.
-		std::cout << "Method: " << req.method << std::endl;
-		std::cout << "Path: " << req.path << std::endl;
-		std::cout << "Query: " << req.query << std::endl;
-		std::cout << "Version: " << req.version << std::endl;
-		std::cout << "Body: " << req.body << std::endl;
+		std::cout << "Method: " << req.getMethod() << std::endl;
+		std::cout << "Path: " << req.getPath() << std::endl;
+		std::cout << "Query: " << req.getQuery() << std::endl;
+		std::cout << "Version: " << req.getVersion() << std::endl;
+		std::cout << "Body: " << req.getBody() << std::endl;
 		std::cout << "Headers:" << std::endl;
-		for (std::map<std::string, std::string>::iterator it = req.headers.begin();
-				it != req.headers.end(); ++it)
+		const std::map<std::string, std::string> &m = req.getHeaders();
+		for (std::map<std::string, std::string>::const_iterator it = m.begin();
+				it != m.end(); ++it)
 			std::cout << "  [" << it->first << "] = " << it->second << std::endl;
 	}
 	catch (const HttpException &e) {

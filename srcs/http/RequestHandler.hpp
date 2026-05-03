@@ -3,7 +3,9 @@
 
 class	RequestHandler {
 	public:
-		void	handleRequest(const Connection &conn) const; 
+		RequestHandler();
+		void	handleRequest(const Connection &conn) const;
+		~RequestHandler();
 };
 
 #endif
