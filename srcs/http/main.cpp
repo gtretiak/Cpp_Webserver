@@ -51,14 +51,17 @@ int main() {
 	for (int t = 0; t < numTests; t++)
 	{
 		std::cout << "==========================================\n"
-			<< "Test " << t + 1 << "\nRAW REQUEST ->\n\n" << requests[t] << std::endl;
+			<< "Test " << t + 1 << "\n\nRAW REQUEST ->\n" << requests[t] << std::endl;
 		HttpRequest	req;
 		response = HttpResponse();
 		try {
 			if (!parser.isRequestComplete(requests[t]))
+			{
+				response.setStatus(400);
 				throw HttpException(400, "Incomplete request");
+			}
 			parser.parseRequest(requests[t], &req); // change raw to raw2, raw3, etc.
-			std::cout << "\nPARSED SUCCESSFULLY ->\n" << std::endl;
+			std::cout << "\nPARSING SUCCESS ->" << std::endl;
 			std::cout << "Method: " << req.getMethod() << std::endl;
 			std::cout << "Path: " << req.getPath() << std::endl;
 			std::cout << "Query: " << req.getQuery() << std::endl;
@@ -69,12 +72,13 @@ int main() {
 			for (std::map<std::string, std::string>::const_iterator it = m.begin();
 					it != m.end(); ++it)
 				std::cout << "  [" << it->first << "] = " << it->second << std::endl;
-			handler.handleRequest(req, response);
-			std::cout << "\nRESPONSE ->\n\n" << response.toString() << std::endl;
 		}
 		catch (const HttpException &e) {
 			std::cout << "Error: " << e.code() << " " << e.what() << std::endl;
+			response.setStatus(e.code());
 		}
+		handler.handleRequest(req, response);
+		std::cout << "\nRESPONSE ->\n" << response.toString() << std::endl;//writebug equivalent
 	}
 	return 0;
 }

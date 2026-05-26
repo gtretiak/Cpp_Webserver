@@ -4,16 +4,23 @@
 #include <sstream>
 #include <map>
 
-HttpResponse::HttpResponse() : version_("HTTP/1.1"), statusCode_(200) {}
+HttpResponse::HttpResponse() : version_("HTTP/1.1"), statusCode_(200), statusText_(StatusCodes::getStatus(200)) {
+}
 
 std::string	HttpResponse::toString() const {
 	std::ostringstream	ss;
 	ss << this->version_ << " " << this->statusCode_ << " ";
 	ss << this->statusText_ << "\r\n";
-       	for (std::map<std::string, std::string>::const_iterator i = this->headers_.begin(); i != this->headers_.end(); i++)
+       	if (!this->headers_.empty())
+	{
+		for (std::map<std::string, std::string>::const_iterator i = this->headers_.begin(); i != this->headers_.end(); i++)
 		ss << i->first << ": " << i->second << "\r\n";
-	ss << "\r\n";
-	ss << this->body_;
+	}
+	if (!this->body_.empty())
+	{
+		ss << "\r\n";
+		ss << this->body_;
+	}
 	return (ss.str());
 }
 void	HttpResponse::setVersion(const std::string &v) {

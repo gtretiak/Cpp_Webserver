@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            padding: 50px 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 40px;
+            font-size: 36px;
+        }
+        
+        .photo-gallery {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            margin-bottom: 40px;
+        }
+        
+        .photo-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        .photo-name {
+            font-size: 14px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 12px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .photo-wrapper:hover .photo-name {
+            opacity: 1;
+        }
+        
+        .photo-circle {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 4px solid #667eea;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .photo-wrapper:hover .photo-circle {
+            transform: scale(1.08);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
+            border-color: #764ba2;
+        }
+        
+        .photo-circle img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .photo-keywords {
+            font-size: 12px;
+            font-weight: bold;
+            color: #764ba2;
+            margin-top: 12px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            text-align: center;
+            max-width: 150px;
+            line-height: 1.4;
+        }
+        
+        .photo-wrapper:hover .photo-keywords {
+            opacity: 1;
+        }
+        
+        .content {
+            font-size: 16px;
+            line-height: 1.8;
+            color: #555;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .content p {
+            margin: 15px 0;
+        }
+        
+        /* Quote Section */
+        .quote-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 30px 35px;
+            color: white;
+            min-height: 120px;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            animation: slideIn 0.3s ease;
+        }
+        
+        .quote-section.show {
+            display: flex;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .quote-author {
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            opacity: 0.9;
+        }
+        
+        .quote-title {
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 12px;
+            color: #ffd700;
+        }
+        
+        .quote-text {
+            font-size: 15px;
+            line-height: 1.7;
+            font-style: italic;
+            margin: 0;
+        }
+        
+        .quote-text:before {
+            content: '"';
+            margin-right: 5px;
+        }
+        
+        .quote-text:after {
+            content: '"';
+            margin-left: 5px;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 30px 20px;
+            }
+            
+            h1 {
+                font-size: 28px;
+            }
+            
+            .photo-circle {
+                width: 120px;
+                height: 120px;
+            }
+            
+            .photo-name,
+            .photo-keywords {
+                font-size: 11px;
+            }
+            
+            .quote-section {
+                padding: 20px 25px;
+            }
+            
+            .quote-text {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to Our Server</h1>
+        
+        <div class="photo-gallery">
+            <!-- George -->
+            <div class="photo-wrapper" onmouseenter="showQuote(this)" onmouseleave="hideQuote()">
+                <div class="photo-name">George</div>
+                <div class="photo-circle">
+                    <img src="./images/gtretiak.jpg" alt="George">
+                </div>
+                <div class="photo-keywords">
+                    HTTP Layer
+                </div>
+                <div class="photo-data" style="display:none;" data-name="George" data-title="HTTP Layer" data-quote="I built a library that takes raw bytes into HTTP request meaning using de-serialization, handles it based on configuration, and returns a fully formed HTTP response string in raw bits back to the client"></div>
+            </div>
+            
+            <!-- Nayara -->
+            <div class="photo-wrapper" onmouseenter="showQuote(this)" onmouseleave="hideQuote()">
+                <div class="photo-name">Nayara</div>
+                <div class="photo-circle">
+                    <img src="./images/nogioni-.jpg" alt="Nayara">
+                </div>
+                <div class="photo-keywords">
+                    Networking Layer
+                </div>
+                <div class="photo-data" style="display:none;" data-name="Nayara" data-title="Networking Layer" data-quote="I built everything that touches sockets, file descriptors, and the poll event loop that accepts connections, reads raw bytes into per-connection buffers, and writes bytes from per-connection output buffers"></div>
+            </div>
+            
+            <!-- Douglas -->
+            <div class="photo-wrapper" onmouseenter="showQuote(this)" onmouseleave="hideQuote()">
+                <div class="photo-name">Douglas</div>
+                <div class="photo-circle">
+                    <img src="./images/dopereir.jpg" alt="Douglas">
+                </div>
+                <div class="photo-keywords">
+                    Config, CGI & File System
+                </div>
+                <div class="photo-data" style="display:none;" data-name="Douglas" data-title="Configuration, CGI & File System Layer" data-quote="I built everything that requires reading the config and touching the filesystem or spawning processes"></div>
+            </div>
+        </div>
+        
+        <div class="content">
+            <p>This is our main page with a great team behind it.</p>
+            <p>Enjoy your visit!</p>
+        </div>
+        
+        <!-- Quote Section - Hidden by default -->
+        <div class="quote-section" id="quoteSection">
+            <div class="quote-author" id="quoteAuthor">George</div>
+            <div class="quote-title" id="quoteTitle">HTTP Layer</div>
+            <p class="quote-text" id="quoteText">I built a library that takes raw bytes into HTTP request meaning using de-serialization, handles it based on configuration, and returns a fully formed HTTP response string in raw bits back to the client</p>
+        </div>
+    </div>
+    
+    <script>
+        function showQuote(element) {
+            const photoData = element.querySelector('.photo-data');
+            const name = photoData.getAttribute('data-name');
+            const title = photoData.getAttribute('data-title');
+            const quote = photoData.getAttribute('data-quote');
+            
+            // Update quote section
+            document.getElementById('quoteAuthor').textContent = name;
+            document.getElementById('quoteTitle').textContent = title;
+            document.getElementById('quoteText').textContent = quote;
+            
+            // Show quote section
+            document.getElementById('quoteSection').classList.add('show');
+        }
+        
+        function hideQuote() {
+            document.getElementById('quoteSection').classList.remove('show');
+        }
+    </script>
+</body>
+</html>
