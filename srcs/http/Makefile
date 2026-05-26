@@ -1,6 +1,6 @@
 NAME = run
 FLAGS = -Wall -Werror -Wextra -std=c++98 -g
-SRC = main.cpp HttpParser.cpp HttpRequest.cpp HttpResponse.cpp HttpException.cpp StatusCodes.cpp RequestHandler.cpp StaticRequestHandler.cpp
+SRC = main.cpp HttpParser.cpp HttpRequest.cpp HttpResponse.cpp HttpException.cpp StatusCodes.cpp RequestHandler.cpp StaticRequestHandler.cpp CgiRequestHandler.cpp
 OBJ = $(addprefix ./, $(SRC:.cpp=.o))
 
 all: $(NAME)

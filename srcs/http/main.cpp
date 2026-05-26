@@ -5,6 +5,7 @@
 #include "HttpException.hpp"
 #include "RequestHandler.hpp"
 #include "StaticRequestHandler.hpp"
+#include "CgiRequestHandler.hpp"
 #include <map>
 
 struct	Connection {

@@ -20,6 +20,7 @@ void	HttpResponse::setVersion(const std::string &v) {
 	this->version_ = v;
 }
 void	HttpResponse::setStatus(int code) {
+// 204, 304?
 	this->statusCode_ = code;
 	this->statusText_ = StatusCodes::getStatus(code);
 }
@@ -32,5 +33,6 @@ void	HttpResponse::setBody(const std::string &b) {
 void	HttpResponse::setHeader(const std::string &k, const std::string &v) {
 	this->headers_[k] = v;
 }
+//keep alive logic TODO
 
 HttpResponse::~HttpResponse() {}
