@@ -10,7 +10,7 @@ std::string	HttpResponse::toString() const {
 	std::ostringstream	ss;
 	ss << this->version_ << " " << this->statusCode_ << " ";
 	ss << this->statusText_ << "\r\n";
-       	for (std::map<std::string, std::string>::iterator i = this->headers_.begin(); i != this->headers_.end(); i++)
+       	for (std::map<std::string, std::string>::const_iterator i = this->headers_.begin(); i != this->headers_.end(); i++)
 		ss << i->first << ": " << i->second << "\r\n";
 	ss << "\r\n";
 	ss << this->body_;

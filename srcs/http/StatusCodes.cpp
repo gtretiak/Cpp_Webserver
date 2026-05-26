@@ -2,7 +2,7 @@
 
 StatusCodes::StatusCodes() {}
 
-static const std::string	&StatusCodes::getStatus(int code) {
+const std::string	StatusCodes::getStatus(int code) {
 	switch (code)
 	{
 		//1xx informational

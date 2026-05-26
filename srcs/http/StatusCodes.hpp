@@ -5,7 +5,7 @@
 class	StatusCodes {
 	public:
 		StatusCodes();
-		static const std::string	&getStatus(int code);
+		static const std::string	getStatus(int code);
 		~StatusCodes();
 };
 
