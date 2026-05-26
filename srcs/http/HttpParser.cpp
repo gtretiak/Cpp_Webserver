@@ -6,7 +6,7 @@
 /*   By: gtretiak <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/27 10:42:25 by gtretiak          #+#    #+#             */
-/*   Updated: 2026/05/03 21:15:31 by gtretiak         ###   ########.fr       */
+/*   Updated: 2026/05/26 13:43:28 by gtretiak         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -246,8 +246,7 @@ size_t	HttpParser::parseRequest(std::string &buf, HttpRequest *req) {
 	return (size);
 }
 
-bool	HttpParser::isRequestComplete(const Connection &conn) const {
-	std::string const	&buf = conn.readBuffer;
+bool	HttpParser::isRequestComplete(const std::string &buf) const {
 	size_t	headerEnd = buf.find("\r\n\r\n"); // header completeness
 	if (headerEnd == std::string::npos)
 		return (false);
@@ -255,9 +254,9 @@ bool	HttpParser::isRequestComplete(const Connection &conn) const {
 	size_t	firstLineEnd = LnH.find("\r\n");
 	if (firstLineEnd == std::string::npos)
 		return (false);
-	std::string	firstL = LnH.substr(0, firstLineEnd);
+/*	std::string	firstL = LnH.substr(0, firstLineEnd);
 	if (firstL.find("GET ") == 0 || firstL.find("DELETE ") == 0)
-		return (true);
+		return (true);*/
 	std::string	lowLnH = toLower(LnH);
 	size_t	clPos = lowLnH.find("content-length:");
 	if (clPos != std::string::npos) // content-length presented
@@ -271,15 +270,10 @@ bool	HttpParser::isRequestComplete(const Connection &conn) const {
 		int	len = std::atoi(LnH.substr(start, end - start).c_str());
 		return (buf.size() >= headerEnd + 4 + len);
 	}
-	clPos = lowLnH.find("transfer-encoding:");
-	if (clPos != std::string::npos) // transfer-encoding presented
-	{
-		size_t	start = clPos + 18;
-		while (start < LnH.size() && LnH[start] == ' ')
-			start++;
+	size_t	tePos = lowLnH.find("transfer-encoding:");
+	if (tePos != std::string::npos) // transfer-encoding presented
 		return (buf.find("0\r\n\r\n", headerEnd + 4) != std::string::npos);
-	}
-	return (false);
+	return (true);
 }
 
 HttpParser::~HttpParser() {}

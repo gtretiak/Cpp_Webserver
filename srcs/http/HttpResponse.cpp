@@ -16,7 +16,6 @@ std::string	HttpResponse::toString() const {
 	ss << this->body_;
 	return (ss.str());
 }
-
 void	HttpResponse::setVersion(const std::string &v) {
 	this->version_ = v;
 }
@@ -25,6 +24,9 @@ void	HttpResponse::setStatus(int code) {
 	this->statusText_ = StatusCodes::getStatus(code);
 }
 void	HttpResponse::setBody(const std::string &b) {
+	std::ostringstream	ss;
+	ss << b.length();
+	this->setHeader("Content-Length", ss.str());
 	this->body_ = b;
 }
 void	HttpResponse::setHeader(const std::string &k, const std::string &v) {

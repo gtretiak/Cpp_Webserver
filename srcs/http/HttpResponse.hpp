@@ -6,7 +6,7 @@
 class	HttpResponse {
 	private:
 		std::string	version_;
-		int	statusCode_;
+		int		statusCode_;
 		std::string	statusText_;
 		std::string	body_;
 		std::map<std::string, std::string>	headers_;
