@@ -6,15 +6,35 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 11:54:28 by dopereir          #+#    #+#             */
-/*   Updated: 2026/04/26 22:37:52 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/05/29 00:28:52 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef LOCATIONCONFIG_HPP
 # define LOCATIONCONFIG_HPP
-# include <iostream>
 
-struct	limitExcept {
+# include <cstddef>
+# include <map>
+# include <string>
+# include <vector>
+
+struct Listen {
+	enum listenTypeImpl {
+		PORT,
+		IP_PORT,
+		HOST_PORT,
+		UNIX_SOCK
+	};
+	typedef Listen::listenTypeImpl	listenType;
+
+	listenType	type;
+	std::string	addr;
+	int			port;
+
+	Listen() : type(PORT), addr(), port(0) {}
+};
+
+struct limitExcept {
 	bool	GET;
 	bool	POST;
 	bool	DELETE;
@@ -22,26 +42,42 @@ struct	limitExcept {
 	limitExcept() : GET(true), POST(true), DELETE(true) {}
 };
 
-// about location block behavior
-//https://www.youtube.com/watch?v=3q2xxMc7XEo
+struct directiveValue {
+	std::string					name;
+	std::vector<std::string>	args;
+};
+
+struct cgiConfig {
+	std::map<std::string, std::string>	cgi_extension;
+	std::string							upload_store;
+};
 
 class	locationConfig {
-	//directives:
-	/*
-	1. root/alias
-	2. index
-	3. autoindex
-	4. return
-	5. limit except
-	6. client_max_body_size
-	7- upload/store path
-	*/
-	size_t			_client_max_body_size;
-	limitExcept		_allowedMethods;
-	std::string		_root;
-	std::string		_alias;
-	bool			_autoindex;
-	std::string		_index;
+public:
+	std::string					_path;
+	std::string					_root;
+	std::string					_alias;
+	std::vector<std::string>	_index;
+	bool						_autoindex;
+	bool						_has_autoindex;
+	size_t						_client_max_body_size;
+	bool						_has_client_max_body_size;
+	limitExcept					_allowed_methods;
+	bool						_has_limit_except;
+	std::map<int, std::string>	_error_pages;
+	std::vector<std::string>	_try_files;
+	std::vector<directiveValue>	_directives;
+	std::string					_redirect;
+	int							_redirect_code;
+	cgiConfig					_cgi;
+	bool						_has_cgi;
+
+	locationConfig();
+	locationConfig(const locationConfig& other);
+	locationConfig& operator=(const locationConfig& other);
+	~locationConfig();
 };
+
+bool	isValidCgiExtention(const std::string& value);
 
 #endif

@@ -1,20 +1,20 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   serverConfig.cpp                                   :+:      :+:    :+:   */
+/*   locationConfig.cpp                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/04/22 23:27:24 by dopereir          #+#    #+#             */
-/*   Updated: 2026/05/28 23:24:43 by dopereir         ###   ########.fr       */
+/*   Created: 2026/05/28 23:24:56 by dopereir          #+#    #+#             */
+/*   Updated: 2026/05/29 00:23:41 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "serverConfig.hpp"
+#include "locationConfig.hpp"
+# include <cctype>
 
-serverConfig::serverConfig()
-	: _listens(),
-	_server_names(),
+locationConfig::locationConfig()
+	: _path(),
 	_root(),
 	_alias(),
 	_index(),
@@ -25,12 +25,15 @@ serverConfig::serverConfig()
 	_allowed_methods(),
 	_has_limit_except(false),
 	_error_pages(),
-	_locations(),
-	_directives() {}
+	_try_files(),
+	_directives(),
+	_redirect(),
+	_redirect_code(0),
+	_cgi(),
+	_has_cgi(false) {}
 
-serverConfig::serverConfig(const serverConfig& other)
-	: _listens(other._listens),
-	_server_names(other._server_names),
+locationConfig::locationConfig(const locationConfig& other)
+	: _path(other._path),
 	_root(other._root),
 	_alias(other._alias),
 	_index(other._index),
@@ -41,13 +44,17 @@ serverConfig::serverConfig(const serverConfig& other)
 	_allowed_methods(other._allowed_methods),
 	_has_limit_except(other._has_limit_except),
 	_error_pages(other._error_pages),
-	_locations(other._locations),
-	_directives(other._directives) {}
+	_try_files(other._try_files),
+	_directives(other._directives),
+	_redirect(other._redirect),
+	_redirect_code(other._redirect_code),
+	_cgi(other._cgi),
+	_has_cgi(other._has_cgi) {
+}
 
-serverConfig& serverConfig::operator=(const serverConfig& other) {
+locationConfig& locationConfig::operator=(const locationConfig& other) {
 	if (this != &other) {
-		_listens = other._listens;
-		_server_names = other._server_names;
+		_path = other._path;
 		_root = other._root;
 		_alias = other._alias;
 		_index = other._index;
@@ -58,10 +65,27 @@ serverConfig& serverConfig::operator=(const serverConfig& other) {
 		_allowed_methods = other._allowed_methods;
 		_has_limit_except = other._has_limit_except;
 		_error_pages = other._error_pages;
-		_locations = other._locations;
+		_try_files = other._try_files;
 		_directives = other._directives;
+		_redirect = other._redirect;
+		_redirect_code = other._redirect_code;
+		_cgi = other._cgi;
+		_has_cgi = other._has_cgi;
 	}
 	return *this;
 }
 
-serverConfig::~serverConfig() {}
+locationConfig::~locationConfig() {
+}
+
+bool	isValidCgiExtention (const std::string& value) {
+	if (value.size() < 2 || value[0] != '.') {
+		return false;
+	}
+	for (size_t i = 1; i < value.size(); ++i) {
+		if (!std::isalnum(static_cast<unsigned char>(value[i]))) {
+			return false;
+		}
+	}
+	return true;
+}
