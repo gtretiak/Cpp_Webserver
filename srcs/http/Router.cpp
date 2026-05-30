@@ -7,13 +7,13 @@ Router	&Router::operator=(const Router &An) {
 		this->config_ = An.config_;
 	return (*this);
 }
-RequestHandler	*Router::resolve(const HttpRequest &req) {
+RequestHandler	&Router::resolve(const HttpRequest &req) {
 	(void)req;
-	RequestHandler *res = new StaticRequestHandler();
 	//examine request
 	//decide on type
 	//routing to it
-	return (res);
+	return (this->staticHandler);
+	return (this->cgiHandler);
 }
 Router::~Router() {
 }

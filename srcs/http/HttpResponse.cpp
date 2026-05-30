@@ -1,4 +1,5 @@
 #include "HttpResponse.hpp"
+#include "HttpException.hpp"
 #include "StatusCodes.hpp"
 #include <string>
 #include <sstream>
@@ -31,6 +32,11 @@ void	HttpResponse::setStatus(int code) {
 	this->statusCode_ = code;
 	this->statusText_ = StatusCodes::getStatus(code);
 }
+
+int	HttpResponse::getStatusCode() {
+	return (this->statusCode_);
+}
+
 void	HttpResponse::setBody(const std::string &b) {
 	std::ostringstream	ss;
 	ss << b.length();
@@ -40,6 +46,9 @@ void	HttpResponse::setBody(const std::string &b) {
 void	HttpResponse::setHeader(const std::string &k, const std::string &v) {
 	this->headers_[k] = v;
 }
-//keep alive logic TODO
+
+bool	HttpResponse::hasHeader(const std::string &k) const {
+	return (this->headers_.find(k) != this->headers_.end());
+}
 
 HttpResponse::~HttpResponse() {}

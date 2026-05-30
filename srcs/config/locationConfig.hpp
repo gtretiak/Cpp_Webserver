@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 11:54:28 by dopereir          #+#    #+#             */
-/*   Updated: 2026/04/26 22:37:52 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/05/30 13:50:24 by gtretiak         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,6 +42,7 @@ class	locationConfig {
 	std::string		_alias;
 	bool			_autoindex;
 	std::string		_index;
+	std::string		_route;
 };
 
 #endif

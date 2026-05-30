@@ -77,13 +77,15 @@ int main(int argc, char **argv) {
 				std::cout << "  [" << it->first << "] = " << it->second << std::endl;
 		}
 		catch (const HttpException &e) {
-			std::cout << "Error: " << e.code() << " " << e.what() << std::endl;
+			std::cerr << "Error: " << e.code() << " " << e.what() << std::endl;
 			response.setStatus(e.code());
 		}
-		RequestHandler	*handler = router.resolve(req);
-		handler->handleRequest(req, response);
-		delete handler;
-		std::cout << "\nRESPONSE ->\n" << response.toString() << std::endl;//writebuf equivalent
+		if (response.getStatusCode() < 400)
+		{
+			RequestHandler	*handler = &(router.resolve(req));
+			handler->handleRequest(req, response);
+			std::cout << "\nRESPONSE ->\n" << response.toString() << std::endl;//writebuf equivalent
+		}
 	}
 	return 0;
 }

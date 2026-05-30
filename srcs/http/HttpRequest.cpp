@@ -12,15 +12,17 @@ void	HttpRequest::setPath(const std::string &p) {
 	this->path_ = p;
 }
 void	HttpRequest::setQuery(const std::string &q) {
-	this->query_ = q;
+		this->query_ = q;
 }
 void	HttpRequest::setVersion(const std::string &v) {
 	this->version_ = v;
 }
 void	HttpRequest::setBody(const std::string &b) {
-	this->body_ = b;
+		this->body_ = b;
 }
 void	HttpRequest::setHeader(const std::string &k, const std::string &v) {
+	if (this->hasHeader(k))
+		throw HttpException(400, "Bad Request");
 	this->headers_[k] = v;
 }
 std::string	HttpRequest::getMethod() const {

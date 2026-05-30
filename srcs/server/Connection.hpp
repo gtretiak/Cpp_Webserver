@@ -4,7 +4,8 @@
 #include <string>
 
 struct Connection {
-    std::string readBuffer;
+	std::string	readBuffer;
+	std::string	writeBuffer;
 };
 
 #endif

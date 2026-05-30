@@ -8,11 +8,13 @@
 class	Router {
 	private:
 		std::string	config_;
+		StaticRequestHandler	staticHandler;
+		CgiRequestHandler	cgiHandler;
 	public:
 		Router(const std::string &config);
 		Router(const Router &An);
 		Router	&operator=(const Router &An);
-		RequestHandler	*resolve(const HttpRequest &req);
+		RequestHandler	&resolve(const HttpRequest &req);
 		//examine request
 		//decide on type
 		//routing to it
