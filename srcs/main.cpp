@@ -1,22 +1,25 @@
 #include <iostream>
-#include "HttpParser.hpp"
-#include "HttpResponse.hpp"
-#include "HttpRequest.hpp"
-#include "HttpException.hpp"
-#include "RequestHandler.hpp"
-#include "StaticRequestHandler.hpp"
-#include "CgiRequestHandler.hpp"
 #include <map>
+#include "http/HttpParser.hpp"
+#include "http/HttpResponse.hpp"
+#include "http/HttpRequest.hpp"
+#include "http/HttpException.hpp"
+#include "http/RequestHandler.hpp"
+#include "http/StaticRequestHandler.hpp"
+#include "http/CgiRequestHandler.hpp"
+#include "http/Router.hpp"
+#include "server/Connection.hpp"
 
-struct	Connection {
-	std::string	readBuffer;
-};
-
-int main() {
-	StaticRequestHandler	handler;
+int main(int argc, char **argv) {
+	if (argc != 2)
+	{
+		std::cerr << "Invalid number of arguments: ";
+		std::cerr << "a config file should be present" << std::endl;
+		return 1;
+	}
+	Router		router(argv[1]);
 	HttpParser	parser;
 	HttpResponse	response;
-	HttpRequest	req;
 	
 	std::string requests[] = {
 		"POST /a/b/../c?x=1 HTTP/1.1\r\n"
@@ -77,8 +80,10 @@ int main() {
 			std::cout << "Error: " << e.code() << " " << e.what() << std::endl;
 			response.setStatus(e.code());
 		}
-		handler.handleRequest(req, response);
-		std::cout << "\nRESPONSE ->\n" << response.toString() << std::endl;//writebug equivalent
+		RequestHandler	*handler = router.resolve(req);
+		handler->handleRequest(req, response);
+		delete handler;
+		std::cout << "\nRESPONSE ->\n" << response.toString() << std::endl;//writebuf equivalent
 	}
 	return 0;
 }

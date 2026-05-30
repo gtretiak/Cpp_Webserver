@@ -6,7 +6,7 @@
 /*   By: gtretiak <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/27 10:42:25 by gtretiak          #+#    #+#             */
-/*   Updated: 2026/05/26 13:43:28 by gtretiak         ###   ########.fr       */
+/*   Updated: 2026/05/30 11:58:54 by gtretiak         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,8 +17,8 @@
 #include <cctype>
 #include <cstdlib>
 #include <vector>
-#include "Connection.hpp"
 #include <iostream>
+#include "../server/Connection.hpp"
 
 HttpParser::HttpParser() {}
 
