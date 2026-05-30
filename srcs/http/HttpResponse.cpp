@@ -3,9 +3,27 @@
 #include "StatusCodes.hpp"
 #include <string>
 #include <sstream>
+#include <cstring>
+#include <iomanip>
 #include <map>
+#include <ctime>
+
+static std::string	getCurrentDate() {
+	time_t	now = time(NULL);
+	struct tm	*timeinfo = gmtime(&now);
+	char	buf[100];
+	std::strftime(buf, sizeof(buf), "%a, %d %b %Y, %H:%M:%S GMT", timeinfo);
+	return (std::string(buf));
+}
 
 HttpResponse::HttpResponse() : version_("HTTP/1.1"), statusCode_(200), statusText_(StatusCodes::getStatus(200)) {
+	this->setHeader("Date", getCurrentDate());
+	this->setHeader("Server", "Our Server");
+}
+
+HttpResponse::HttpResponse(const std::string &serverName) : version_("HTTP/1.1"), serverName_(serverName), statusCode_(200), statusText_(StatusCodes::getStatus(200)) {
+	this->setHeader("Date", getCurrentDate());
+	this->setHeader("Server", serverName_);
 }
 
 std::string	HttpResponse::toString() const {

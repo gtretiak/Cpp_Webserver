@@ -6,7 +6,7 @@
 /*   By: gtretiak <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/27 10:42:25 by gtretiak          #+#    #+#             */
-/*   Updated: 2026/05/30 17:31:36 by gtretiak         ###   ########.fr       */
+/*   Updated: 2026/05/30 20:12:34 by gtretiak         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -130,7 +130,11 @@ void	HttpParser::parseLine(const std::string &buf, HttpRequest *req) {
 		throw HttpException(400, "Bad Request");
 	while (buf[i] && buf[i] != ' ')
 		req->setVersion(req->getVersion() + buf[i++]);
-	if (req->getVersion() != "HTTP/1.0" && req->getVersion() != "HTTP/1.1")
+	if (req->getVersion() == "HTTP/1.0")
+		req->setHeader("Connection", "close");
+	else if (req->getVersion() == "HTTP/1.1")
+		req->setHeader("Connection", "keep-alive");
+	else 
 		throw HttpException(400, "Bad Request");
 }
 
@@ -261,9 +265,6 @@ bool	HttpParser::isRequestComplete(const std::string &buf) const {
 	size_t	firstLineEnd = LnH.find("\r\n");
 	if (firstLineEnd == std::string::npos)
 		return (false);
-/*	std::string	firstL = LnH.substr(0, firstLineEnd);
-	if (firstL.find("GET ") == 0 || firstL.find("DELETE ") == 0)
-		return (true);*/
 	std::string	lowLnH = toLower(LnH);
 	size_t	clPos = lowLnH.find("content-length:");
 	if (clPos != std::string::npos) // content-length presented

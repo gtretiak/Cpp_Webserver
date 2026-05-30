@@ -22,15 +22,22 @@ int main(int argc, char **argv) {
 	HttpResponse	response;
 	
 	std::string requests[] = {
+		"GET /index.html HTTP/1.1\r\n"
+		"Host: test.com\r\n"
+		"Transfer-Encoding: chunked\r\n"//hexadecimal
+		"\r\n"
+		"3\r\n"//thi
+		"thi\r\n"
+		"a\r\n"//s is a bod
+		"1\r\n"
+		"y\r\n"
+		"0\r\n\r\n", // valid
+		
 		"POST /a/b/../c?x=1 HTTP/1.1\r\n"
 		"Host: example.com\r\n"
 		"Content-Length: 5\r\n"
 		"\r\n"
-		"hello",
-		
-		"GET /index.html HTTP/1.1\r\n"
-		"Host: test.com\r\n"
-		"\r\n", // valid
+		"hellooo",
 		
 		"GET /../../etc/passwd HTTP/1.1\r\n"
 		"Host: test.com\r\n"
@@ -63,7 +70,7 @@ int main(int argc, char **argv) {
 				response.setStatus(400);
 				throw HttpException(400, "Incomplete request");
 			}
-			parser.parseRequest(requests[t], &req); // change raw to raw2, raw3, etc.
+			parser.parseRequest(requests[t], &req);
 			std::cout << "\nPARSING SUCCESS ->" << std::endl;
 			std::cout << "Method: " << req.getMethod() << std::endl;
 			std::cout << "Path: " << req.getPath() << std::endl;
@@ -79,13 +86,12 @@ int main(int argc, char **argv) {
 		catch (const HttpException &e) {
 			std::cerr << "Error: " << e.code() << " " << e.what() << std::endl;
 			response.setStatus(e.code());
+			response.setHeader("Content-Type", "text/html");
+			response.setHeader("Connection", "close");
+			//response.setBody(makeBody(e.code())); OR handleRequest anyway? TODO
 		}
-		if (response.getStatusCode() < 400)
-		{
-			RequestHandler	*handler = &(router.resolve(req));
-			handler->handleRequest(req, response);
-			std::cout << "\nRESPONSE ->\n" << response.toString() << std::endl;//writebuf equivalent
-		}
-	}
+		RequestHandler	*handler = &(router.resolve(req));
+		handler->handleRequest(req, response);
+}
 	return 0;
 }
