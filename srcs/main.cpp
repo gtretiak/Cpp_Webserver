@@ -1,4 +1,6 @@
 #include <iostream>
+#include <sstream>
+#include <cstdlib>
 #include <map>
 #include "http/HttpParser.hpp"
 #include "http/HttpResponse.hpp"
@@ -18,8 +20,8 @@ int main(int argc, char **argv) {
 		std::cerr << "a config file should be present" << std::endl;
 		return 1;
 	}
-	Router		router(argv[1]);
-	HttpParser	parser;
+	Router		router(argv[1]);//one per server
+	HttpParser	parser;//one per server, reusable
 	
 	std::string requests[] = {
 		"GET /index.html HTTP/1.1\r\n"
@@ -63,10 +65,10 @@ int main(int argc, char **argv) {
 	{
 		std::cout << "==========================================\n"
 			<< "Test " << t + 1 << "\n\nRAW REQUEST ->\n" << requests[t] << std::endl;
-		Connection	conn;
+		Connection	conn;//should be able to handle vector<Connection>
 		conn.readBuffer = requests[t];
-		HttpRequest	req;
-		HttpResponse	response;
+		HttpRequest	req;//arbitrary number per connection, all reusable
+		HttpResponse	response;//paired to each request, all reusable
 		try {
 			if (!parser.isRequestComplete(conn.readBuffer))
 			{//temp code. To be handled in server loop
@@ -87,6 +89,10 @@ int main(int argc, char **argv) {
 			for (std::map<std::string, std::string>::const_iterator it = m.begin();
 					it != m.end(); ++it)
 				std::cout << "  [" << it->first << "] = " << it->second << std::endl;
+			//here should be router.route(req, res) to be called from the outside
+			//plus handling request should be moved here too:
+			//RequestHandler	*handler = &(router.resolve(req));
+			//handler->handleRequest(req, response);
 		}
 		catch (const HttpException &e) {
 			std::cerr << "Error: " << e.code() << " " << e.what() << std::endl;
@@ -95,12 +101,14 @@ int main(int argc, char **argv) {
 				response.setVersion("HTTP/1.1");
 			response.setHeader("Content-Type", "text/html");
 			response.setHeader("Connection", "close");
-			ErrorPageGenerator::generate(e.code());
-			//response.setBody(makeBody(e.code())); OR handleRequest anyway? TODO
+			std::string	content = ErrorPageGenerator::generate(e.code());
+			response.setBody(content);
+			std::ostringstream	filePath;
+			filePath << "./www/errors/" << e.code() << ".html";//to test
+			system(("open " + filePath.str()).c_str());//to test only, to be removed
 		}
-		//here should be router.route(req, res) to be called from the outside
-		RequestHandler	*handler = &(router.resolve(req));
-		handler->handleRequest(req, response);
+		RequestHandler	*handler = &(router.resolve(req));//for test purposes, to be removed
+		handler->handleRequest(req, response);// same
 		req.setHeader("Cookie", response.getHeader("Set-Cookie"));
 		//here should be conn.writeBuffer = res.toString() to be called from the outside
 }

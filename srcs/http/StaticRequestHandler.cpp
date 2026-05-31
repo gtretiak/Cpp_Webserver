@@ -6,6 +6,7 @@
 #include <sstream>
 #include <fcntl.h>
 #include <unistd.h>
+#include <cstdlib>
 
 static std::string	readFile(const std::string &path) {
 	int	fd = open(path.c_str(), O_RDONLY);
@@ -50,7 +51,12 @@ void	StaticRequestHandler::handleRequest(HttpRequest &req, HttpResponse &res) {
 	- Immutable (never changes):
 	res.setHeader("Cache-Control", "public, max-age=31536000, immutable");*/
 	res.setHeader("Set-Cookie", "sessionId=abc123; Max-Age=3600");
-	std::string	filePath = "/var/www/" + type + path;
+	std::string	filePath;
+	if (type == "text/html")
+		filePath = "./www/html" + path;
+	else
+		filePath = ".www/application" + path;
+	std::cout << "type(text/html?:[" << type << "],\npath:[" << path << "]\nfilepath:[" << filePath << "]" << std::endl;
 	std::string	content = readFile(filePath);
 	res.setBody(content);
 	//res.setHeader("Lat-Modified", formatTime(fileTime));TODO
@@ -59,6 +65,7 @@ void	StaticRequestHandler::handleRequest(HttpRequest &req, HttpResponse &res) {
 	//setStatus(code) if needed
 	//setVersion(version) - if needed
 	std::cout << "\nRESPONSE ->\n";//cout - conn.writeBuffer equivalent
-	std::cout << res.toString() << std::endl;
+	system(("open " + filePath).c_str());//to test only, to be removed
+	//std::cout << res.toString() << std::endl;//to test only, to be sent to writeBuffer
 }
 StaticRequestHandler::~StaticRequestHandler() {}
