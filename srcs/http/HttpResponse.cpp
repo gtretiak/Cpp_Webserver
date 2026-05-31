@@ -82,7 +82,8 @@ std::string	HttpResponse::getHeader(const std::string &k) const {
 	std::string	lowKey = toLower(k);
 	std::map<std::string, std::string>::const_iterator i = this->headers_.find(lowKey);
 	if (i == this->headers_.end())
-		throw HttpException(400, "Header Not Found");
+		return "";
+		//throw HttpException(400, "Header Not Found");
 	return (i->second);
 }
 bool	HttpResponse::hasHeader(const std::string &k) const {

@@ -36,11 +36,17 @@ int main(int argc, char **argv) {
 		"y\r\n"
 		"0\r\n\r\n", // valid
 		
-		"POST /a/b/../c?x=1 HTTP/1.1\r\n"
+		"POST /b/../uploads?x=1 HTTP/1.1\r\n"
 		"Host: example.com\r\n"
 		"Content-Length: 5\r\n"
 		"\r\n"
-		"hellooo",
+		"hello", // valid 
+
+		"DELETE /b/../uploads/file_1?x=1 HTTP/1.1\r\n"
+		"Host: example.com\r\n"
+		"Content-Length: 5\r\n"
+		"\r\n"
+		"hello", // valid 
 		
 		"GET /../../etc/passwd HTTP/1.1\r\n"
 		"Host: test.com\r\n"
@@ -90,8 +96,10 @@ int main(int argc, char **argv) {
 					it != m.end(); ++it)
 				std::cout << "  [" << it->first << "] = " << it->second << std::endl;
 			//router.route(req, res) should be called from the outside instead of handlers:
-			//RequestHandler	*handler = &(router.resolve(req));
-			//handler->handleRequest(req, response);
+		RequestHandler	*handler = &(router.resolve(req));//for test purposes, to be removed
+		handler->handleRequest(req, response);// same
+		req.setHeader("cookie", response.getHeader("set-cookie"));
+		//here should be conn.writeBuffer = res.toString() to be called from the outside
 		}
 		catch (const HttpException &e) {//block should be reviewed
 			std::cerr << "Error: " << e.code() << " " << e.what() << std::endl;
@@ -104,12 +112,8 @@ int main(int argc, char **argv) {
 			response.setBody(content);
 			std::ostringstream	filePath;
 			filePath << "./www/errors/" << e.code() << ".html";//to test
-			system(("open " + filePath.str()).c_str());//to test only, to be removed
+			//system(("open " + filePath.str()).c_str());//to test only, to be removed
 		}
-		RequestHandler	*handler = &(router.resolve(req));//for test purposes, to be removed
-		handler->handleRequest(req, response);// same
-		req.setHeader("cookie", response.getHeader("set-cookie"));
-		//here should be conn.writeBuffer = res.toString() to be called from the outside
 }
 	return 0;
 }
