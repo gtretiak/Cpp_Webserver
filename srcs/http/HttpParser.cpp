@@ -6,7 +6,7 @@
 /*   By: gtretiak <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/27 10:42:25 by gtretiak          #+#    #+#             */
-/*   Updated: 2026/05/30 20:12:34 by gtretiak         ###   ########.fr       */
+/*   Updated: 2026/05/31 12:31:28 by gtretiak         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -135,7 +135,7 @@ void	HttpParser::parseLine(const std::string &buf, HttpRequest *req) {
 	else if (req->getVersion() == "HTTP/1.1")
 		req->setHeader("Connection", "keep-alive");
 	else 
-		throw HttpException(400, "Bad Request");
+		throw HttpException(505, "HTTP Version Not Supported");
 }
 
 static std::string	toLower(const std::string &key) {
@@ -197,8 +197,8 @@ void	HttpParser::parseBody(std::string &buf, HttpRequest *req) {
 	if (req->hasHeader("content-length"))
 	{
 		int	len = std::atoi(req->getHeader("content-length").c_str());
-		if (len < 0 || (size_t)len > buf.size())
-		       throw HttpException(400, "Bad Request");
+		if (len < 0 || (size_t)len < buf.size())
+		       throw HttpException(400, "Extra Data After Body");
 		req->setBody(buf.substr(0, len));
 	}
 	else // chunked
@@ -211,11 +211,12 @@ void	HttpParser::parseBody(std::string &buf, HttpRequest *req) {
 			if (lineEnd == std::string::npos)
 				throw HttpException(400, "Bad Request");
 			int	chunkSize = std::strtol(buf.substr(i, lineEnd - i).c_str(), NULL, 16);
+			// 16 means hexadecimal base
 			if (chunkSize == 0)
 				break ;
 			i = lineEnd + 2;
 			if (i + chunkSize > buf.size())
-				throw HttpException(400, "Bad Request");
+				throw HttpException(400, "Chunk Size Mismatch");
 			if (buf.substr(i + chunkSize, 2) != "\r\n")
 				throw HttpException(400, "Bad Request");
 			res += buf.substr(i, chunkSize);
@@ -251,6 +252,8 @@ size_t	HttpParser::parseRequest(std::string &buf, HttpRequest *req) {
 		if (bodyEnd == std::string::npos)
 			throw HttpException(400, "Bad Request");
 		std::string	body = buf.substr(j + 4, bodyEnd - (j + 4) + 5);
+		if (bodyEnd + 5 < buf.size()) 
+			throw HttpException(400, "Extra data after terminator");
 		parseBody(body, req);
 		size = bodyEnd + 5;
 	}

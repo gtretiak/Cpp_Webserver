@@ -2,16 +2,29 @@
 #include "MimeTypes.hpp"
 #include "HttpException.hpp"
 #include <iostream>
-#include <fstream>
+#include <string>
 #include <sstream>
+#include <fcntl.h>
+#include <unistd.h>
 
 static std::string	readFile(const std::string &path) {
-	std::ifstream	file(path.c_str());
-	/*if (!file.is_open())
-		throw HttpException(400, "File Not Found"); OR should it be something else? TODO*/
-	std::stringstream	buf;
-	buf << file.rdbuf();
-	return buf.str();
+	int	fd = open(path.c_str(), O_RDONLY);
+/*	if (fd < 0)
+		throw HttpException(400, "File Not Found");*/
+	std::string	content;
+	char	buf[4096];
+	ssize_t	bytesRead = 1;
+	while (bytesRead > 0)
+	{
+		bytesRead = read(fd, buf, sizeof(buf));
+		if (bytesRead <= 0)
+			break ;
+		content.append(buf, bytesRead);
+	}
+	close(fd);
+/*	if (bytesRead < 0)
+		throw HttpException(500, "Internal Server Error");*/
+	return content;
 }
 
 StaticRequestHandler::StaticRequestHandler(){}
@@ -36,6 +49,7 @@ void	StaticRequestHandler::handleRequest(HttpRequest &req, HttpResponse &res) {
 	res.setHeader("Cache-Control", "private, max-age=1800");
 	- Immutable (never changes):
 	res.setHeader("Cache-Control", "public, max-age=31536000, immutable");*/
+	res.setHeader("Set-Cookie", "sessionId=abc123; Max-Age=3600");
 	std::string	filePath = "/var/www/" + type + path;
 	std::string	content = readFile(filePath);
 	res.setBody(content);

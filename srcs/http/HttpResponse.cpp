@@ -3,17 +3,18 @@
 #include "StatusCodes.hpp"
 #include <string>
 #include <sstream>
-#include <cstring>
+#include <cstring>//char string functions - strftime()
 #include <iomanip>
 #include <map>
-#include <ctime>
+//#include <ctime>//time_t, time(), gmtime()
 
 static std::string	getCurrentDate() {
-	time_t	now = time(NULL);
+/*	time_t	now = time(NULL);
 	struct tm	*timeinfo = gmtime(&now);
 	char	buf[100];
 	std::strftime(buf, sizeof(buf), "%a, %d %b %Y, %H:%M:%S GMT", timeinfo);
-	return (std::string(buf));
+	return (std::string(buf));*/
+	return ("Wed 21 Oct 2067 14:44:44 GMT");
 }
 
 HttpResponse::HttpResponse() : version_("HTTP/1.1"), statusCode_(200), statusText_(StatusCodes::getStatus(200)) {
@@ -64,7 +65,12 @@ void	HttpResponse::setBody(const std::string &b) {
 void	HttpResponse::setHeader(const std::string &k, const std::string &v) {
 	this->headers_[k] = v;
 }
-
+std::string	HttpResponse::getHeader(const std::string &k) const {
+	std::map<std::string, std::string>::const_iterator i = this->headers_.find(k);
+	if (i == this->headers_.end())
+		throw HttpException(400, "Header Not Found");
+	return (i->second);
+}
 bool	HttpResponse::hasHeader(const std::string &k) const {
 	return (this->headers_.find(k) != this->headers_.end());
 }

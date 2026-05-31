@@ -8,6 +8,7 @@
 #include "http/StaticRequestHandler.hpp"
 #include "http/CgiRequestHandler.hpp"
 #include "http/Router.hpp"
+#include "http/ErrorPageGenerator.hpp"
 #include "server/Connection.hpp"
 
 int main(int argc, char **argv) {
@@ -19,7 +20,6 @@ int main(int argc, char **argv) {
 	}
 	Router		router(argv[1]);
 	HttpParser	parser;
-	HttpResponse	response;
 	
 	std::string requests[] = {
 		"GET /index.html HTTP/1.1\r\n"
@@ -29,6 +29,7 @@ int main(int argc, char **argv) {
 		"3\r\n"//thi
 		"thi\r\n"
 		"a\r\n"//s is a bod
+		"s is a bod\r\n"
 		"1\r\n"
 		"y\r\n"
 		"0\r\n\r\n", // valid
@@ -62,15 +63,19 @@ int main(int argc, char **argv) {
 	{
 		std::cout << "==========================================\n"
 			<< "Test " << t + 1 << "\n\nRAW REQUEST ->\n" << requests[t] << std::endl;
+		Connection	conn;
+		conn.readBuffer = requests[t];
 		HttpRequest	req;
-		response = HttpResponse();
+		HttpResponse	response;
 		try {
-			if (!parser.isRequestComplete(requests[t]))
-			{
+			if (!parser.isRequestComplete(conn.readBuffer))
+			{//temp code. To be handled in server loop
 				response.setStatus(400);
 				throw HttpException(400, "Incomplete request");
 			}
-			parser.parseRequest(requests[t], &req);
+			parser.parseRequest(conn.readBuffer, &req);//to be called from the outside!
+			conn.httpVersion = req.getVersion();
+			response.setVersion(conn.httpVersion);
 			std::cout << "\nPARSING SUCCESS ->" << std::endl;
 			std::cout << "Method: " << req.getMethod() << std::endl;
 			std::cout << "Path: " << req.getPath() << std::endl;
@@ -86,12 +91,18 @@ int main(int argc, char **argv) {
 		catch (const HttpException &e) {
 			std::cerr << "Error: " << e.code() << " " << e.what() << std::endl;
 			response.setStatus(e.code());
+			if (conn.httpVersion.empty())//never set due to invalid request's version
+				response.setVersion("HTTP/1.1");
 			response.setHeader("Content-Type", "text/html");
 			response.setHeader("Connection", "close");
+			ErrorPageGenerator::generate(e.code());
 			//response.setBody(makeBody(e.code())); OR handleRequest anyway? TODO
 		}
+		//here should be router.route(req, res) to be called from the outside
 		RequestHandler	*handler = &(router.resolve(req));
 		handler->handleRequest(req, response);
+		req.setHeader("Cookie", response.getHeader("Set-Cookie"));
+		//here should be conn.writeBuffer = res.toString() to be called from the outside
 }
 	return 0;
 }

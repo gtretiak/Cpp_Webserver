@@ -20,6 +20,7 @@ class	HttpResponse {
 		int	getStatusCode();
 		void	setBody(const std::string &b);
 		void	setHeader(const std::string &k, const std::string &v);
+		std::string	getHeader(const std::string &k) const;
 		bool	hasHeader(const std::string &k) const;
 		~HttpResponse();
 };
