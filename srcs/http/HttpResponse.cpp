@@ -18,13 +18,13 @@ static std::string	getCurrentDate() {
 }
 
 HttpResponse::HttpResponse() : version_("HTTP/1.1"), statusCode_(200), statusText_(StatusCodes::getStatus(200)) {
-	this->setHeader("Date", getCurrentDate());
-	this->setHeader("Server", "Our Server");
+	this->setHeader("date", getCurrentDate());
+	this->setHeader("server", "Our Server");
 }
 
 HttpResponse::HttpResponse(const std::string &serverName) : version_("HTTP/1.1"), serverName_(serverName), statusCode_(200), statusText_(StatusCodes::getStatus(200)) {
-	this->setHeader("Date", getCurrentDate());
-	this->setHeader("Server", serverName_);
+	this->setHeader("date", getCurrentDate());
+	this->setHeader("server", serverName_);
 }
 
 std::string	HttpResponse::toString() const {
@@ -59,20 +59,35 @@ int	HttpResponse::getStatusCode() {
 void	HttpResponse::setBody(const std::string &b) {
 	std::ostringstream	ss;
 	ss << b.length();
-	this->setHeader("Content-Length", ss.str());
+	this->setHeader("content-length", ss.str());
 	this->body_ = b;
 }
+static std::string	toLower(const std::string &key) {
+	std::string     res = key;
+	for (size_t i = 0; i < res.size(); i++)
+		res[i] = std::tolower(res[i]);
+	return (res);
+}
+
 void	HttpResponse::setHeader(const std::string &k, const std::string &v) {
-	this->headers_[k] = v;
+	std::string	lowKey = toLower(k);
+	if (lowKey == "content-length" || lowKey == "content-type" || lowKey == "date" || lowKey == "server" || lowKey == "location")
+	{
+	       if (this->hasHeader(lowKey))
+		       throw HttpException(400, "Unique Header Duplicated: " + k);
+	}
+	this->headers_[lowKey] = v;
 }
 std::string	HttpResponse::getHeader(const std::string &k) const {
-	std::map<std::string, std::string>::const_iterator i = this->headers_.find(k);
+	std::string	lowKey = toLower(k);
+	std::map<std::string, std::string>::const_iterator i = this->headers_.find(lowKey);
 	if (i == this->headers_.end())
 		throw HttpException(400, "Header Not Found");
 	return (i->second);
 }
 bool	HttpResponse::hasHeader(const std::string &k) const {
-	return (this->headers_.find(k) != this->headers_.end());
+	std::string	lowKey = toLower(k);
+	return (this->headers_.find(lowKey) != this->headers_.end());
 }
 
 HttpResponse::~HttpResponse() {}

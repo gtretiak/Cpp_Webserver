@@ -8,7 +8,7 @@
 #include "http/HttpException.hpp"
 #include "http/RequestHandler.hpp"
 #include "http/StaticRequestHandler.hpp"
-#include "http/CgiRequestHandler.hpp"
+#include "cgi/CgiRequestHandler.hpp"
 #include "http/Router.hpp"
 #include "http/ErrorPageGenerator.hpp"
 #include "server/Connection.hpp"
@@ -89,18 +89,17 @@ int main(int argc, char **argv) {
 			for (std::map<std::string, std::string>::const_iterator it = m.begin();
 					it != m.end(); ++it)
 				std::cout << "  [" << it->first << "] = " << it->second << std::endl;
-			//here should be router.route(req, res) to be called from the outside
-			//plus handling request should be moved here too:
+			//router.route(req, res) should be called from the outside instead of handlers:
 			//RequestHandler	*handler = &(router.resolve(req));
 			//handler->handleRequest(req, response);
 		}
-		catch (const HttpException &e) {
+		catch (const HttpException &e) {//block should be reviewed
 			std::cerr << "Error: " << e.code() << " " << e.what() << std::endl;
 			response.setStatus(e.code());
 			if (conn.httpVersion.empty())//never set due to invalid request's version
 				response.setVersion("HTTP/1.1");
-			response.setHeader("Content-Type", "text/html");
-			response.setHeader("Connection", "close");
+			response.setHeader("content-type", "text/html");
+			response.setHeader("connection", "close");
 			std::string	content = ErrorPageGenerator::generate(e.code());
 			response.setBody(content);
 			std::ostringstream	filePath;
@@ -109,7 +108,7 @@ int main(int argc, char **argv) {
 		}
 		RequestHandler	*handler = &(router.resolve(req));//for test purposes, to be removed
 		handler->handleRequest(req, response);// same
-		req.setHeader("Cookie", response.getHeader("Set-Cookie"));
+		req.setHeader("cookie", response.getHeader("set-cookie"));
 		//here should be conn.writeBuffer = res.toString() to be called from the outside
 }
 	return 0;

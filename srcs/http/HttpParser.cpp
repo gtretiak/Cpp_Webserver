@@ -6,7 +6,7 @@
 /*   By: gtretiak <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/27 10:42:25 by gtretiak          #+#    #+#             */
-/*   Updated: 2026/05/31 12:31:28 by gtretiak         ###   ########.fr       */
+/*   Updated: 2026/05/31 19:46:37 by gtretiak         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,7 @@
 #include "../server/Connection.hpp"
 
 static const size_t	MAX_HEADER_SIZE = 8192;
+static const size_t	MAX_BODY_SIZE = 8192;//to be fetch from config; to be removed TODO
 
 HttpParser::HttpParser() {}
 
@@ -97,7 +98,8 @@ void	HttpParser::parseLine(const std::string &buf, HttpRequest *req) {
 	while (i < buf.size() && buf[i] != ' ')
 		req->setMethod(req->getMethod() + buf[i++]);
 	if (req->getMethod() != "DELETE" && req->getMethod() != "GET" && req->getMethod() != "POST")
-		throw HttpException(405, "Method Not Allowed");
+		throw HttpException(405,
+			"Method Not Allowed: " + req->getMethod() + " is not supported");
 	while (i < buf.size() && buf[i] == ' ')
 		i++;
 	if (!buf[i])
@@ -131,9 +133,9 @@ void	HttpParser::parseLine(const std::string &buf, HttpRequest *req) {
 	while (buf[i] && buf[i] != ' ')
 		req->setVersion(req->getVersion() + buf[i++]);
 	if (req->getVersion() == "HTTP/1.0")
-		req->setHeader("Connection", "close");
+		req->setHeader("connection", "close");
 	else if (req->getVersion() == "HTTP/1.1")
-		req->setHeader("Connection", "keep-alive");
+		req->setHeader("connection", "keep-alive");
 	else 
 		throw HttpException(505, "HTTP Version Not Supported");
 }
@@ -197,7 +199,11 @@ void	HttpParser::parseBody(std::string &buf, HttpRequest *req) {
 	if (req->hasHeader("content-length"))
 	{
 		int	len = std::atoi(req->getHeader("content-length").c_str());
-		if (len < 0 || (size_t)len < buf.size())
+		if (len < 0)
+			throw HttpException(400, "Invalid Content-Length: negative value");
+		if (static_cast<size_t>(len) > MAX_BODY_SIZE)
+			throw HttpException(413, "Payload Too Large");
+		if (static_cast<size_t>(len) < buf.size())
 		       throw HttpException(400, "Extra Data After Body");
 		req->setBody(buf.substr(0, len));
 	}
