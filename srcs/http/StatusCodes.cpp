@@ -23,11 +23,15 @@ const std::string	StatusCodes::getStatus(int code) {
 		case 405: return "Method Not Allowed";
 		case 408: return "Request Timeout";//client too slow
 		case 413: return "Payload Too Large";//body exceeds maxSize
+		case 429: return "Too Many Requests";//user sent too many, too quickly TODO
 		//5xx server error
 		case 500: return "Internal Server Error";//unexpected logic err
 		case 501: return "Not Implemented";
 		case 502: return "Bad Gateway";//CGI returned invalid response
+		case 503: return "Service Unavailable";//server maintenance/overload  TODO
 		case 504: return "Gateway Timeout";//CGI didn't respond in time
+		case 505: return "HTTP Version Not Supported";//TODO
+		//Look for more to implement TODO
 		default: return "Unknown";
 	}
 }

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>500 - Internal Server Error</title>
+    <title>503 - Service Unavailable</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
@@ -109,6 +109,13 @@
             font-weight: 600;
         }
         
+        .status-info {
+            font-size: 14px;
+            color: #bc1888;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        
         .suggestions-list {
             display: flex;
             flex-wrap: wrap;
@@ -195,32 +202,33 @@
 <body>
     <div class="container">
         <div class="left-section">
-            <div class="emoji">💥</div>
+            <div class="emoji">🚧</div>
         </div>
         
         <div class="right-section">
-            <div class="error-code">500</div>
-            <h1 class="error-title">Internal Server Error</h1>
+            <div class="error-code">503</div>
+            <h1 class="error-title">Service Unavailable</h1>
             
             <p class="error-description">
-                Sorry, we're experiencing technical difficulties. Our team is working to fix this. Please try again later.
+                We're sorry, the server is temporarily unavailable. We're performing maintenance or experiencing high traffic.
             </p>
             
             <div class="suggestions">
+                <div class="status-info">We're working on it - check back soon!</div>
                 <h4>What we're doing:</h4>
                 <div class="suggestions-list">
-                    <span class="suggestion-item">Investigating issue</span>
-                    <span class="suggestion-item">Working on fix</span>
-                    <span class="suggestion-item">Coming back soon</span>
+                    <span class="suggestion-item">Performing maintenance</span>
+                    <span class="suggestion-item">Scaling infrastructure</span>
+                    <span class="suggestion-item">Coming back online shortly</span>
                 </div>
             </div>
             
             <div class="button-group">
-                <a href="./../index.html" class="btn btn-primary">Go Home</a>
-                <a href="javascript:history.back()" class="btn btn-secondary">Go Back</a>
+                <a href="./../html/index.html" class="btn btn-primary">Go Home</a>
+                <a href="javascript:location.reload()" class="btn btn-secondary">Retry</a>
             </div>
             
-            <div class="timestamp" id="timestamp">Error ID: 500 | Time: 00:00 00/00/0000</div>
+            <div class="timestamp" id="timestamp">Error ID: 503 | Time: 00:00 00/00/0000</div>
         </div>
     </div>
     
@@ -236,7 +244,7 @@
             const timestamp = `${hours}:${minutes} ${day}/${month}/${year}`;
             document.getElementById('timestamp').textContent = `Error ID: ${code} | Time: ${timestamp}`;
         }
-        updateTimestamp(500);
+        updateTimestamp(503);
     </script>
 </body>
 </html>

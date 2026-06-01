@@ -12,16 +12,30 @@ void	HttpRequest::setPath(const std::string &p) {
 	this->path_ = p;
 }
 void	HttpRequest::setQuery(const std::string &q) {
-	this->query_ = q;
+		this->query_ = q;
 }
 void	HttpRequest::setVersion(const std::string &v) {
 	this->version_ = v;
 }
 void	HttpRequest::setBody(const std::string &b) {
-	this->body_ = b;
+		this->body_ = b;
+}
+static std::string	toLower(const std::string &key) {
+	std::string     res = key;
+	for (size_t i = 0; i < res.size(); i++)
+		res[i] = std::tolower(res[i]);
+	return (res);
 }
 void	HttpRequest::setHeader(const std::string &k, const std::string &v) {
-	this->headers_[k] = v;
+	std::string	lowKey = toLower(k);
+	if (lowKey == "host" || lowKey == "content-length" || lowKey == "content-type"
+		|| lowKey == "date" || lowKey == "authorization" || lowKey == "server"
+		|| lowKey == "location" || lowKey == "cache-control")
+	{
+		if (this->hasHeader(lowKey))
+			throw HttpException(400, "Unique Header Duplicated: " + k);
+	}
+	this->headers_[lowKey] = v;
 }
 std::string	HttpRequest::getMethod() const {
 	return (this->method_);
@@ -42,16 +56,19 @@ std::string	HttpRequest::getBody() const {
 	return (this->body_);
 }
 std::string	HttpRequest::getHeader(const std::string &key) const {
-	std::map<std::string, std::string>::const_iterator i = this->headers_.find(key);
+	std::string	lowKey = toLower(key);
+	std::map<std::string, std::string>::const_iterator i = this->headers_.find(lowKey);
 	if (i == this->headers_.end())
-		throw HttpException(500, "Header Not Found");
+		return "";
+		//throw HttpException(500, "Header Not Found");
 	return (i->second);
 }
 const std::map<std::string, std::string>	&HttpRequest::getHeaders() const {
 	return (this->headers_);
 }
 bool	HttpRequest::hasHeader(const std::string &key) const {
-	return (this->headers_.find(key) != this->headers_.end());
+	std::string	lowKey = toLower(key);
+	return (this->headers_.find(lowKey) != this->headers_.end());
 }
 
 HttpRequest::~HttpRequest() {}

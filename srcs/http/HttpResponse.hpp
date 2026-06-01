@@ -6,17 +6,22 @@
 class	HttpResponse {
 	private:
 		std::string	version_;
+		std::string	serverName_;
 		int		statusCode_;
 		std::string	statusText_;
 		std::string	body_;
 		std::map<std::string, std::string>	headers_;
 	public:
 		HttpResponse();
+		HttpResponse(const std::string &serverName);
 		std::string	toString() const;
 		void	setVersion(const std::string &v);
 		void	setStatus(int code);
+		int	getStatusCode();
 		void	setBody(const std::string &b);
 		void	setHeader(const std::string &k, const std::string &v);
+		std::string	getHeader(const std::string &k) const;
+		bool	hasHeader(const std::string &k) const;
 		~HttpResponse();
 };
 
