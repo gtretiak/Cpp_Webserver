@@ -12,8 +12,9 @@ class	CgiRequestHandler : public RequestHandler {
 	public:
 		CgiRequestHandler();
 		CgiRequestHandler(const std::string &cgiDir);
-		void	handleRequest(HttpRequest &req, HttpResponse &res);
 		~CgiRequestHandler();
+
+		void	handleRequest(HttpRequest &req, HttpResponse &res);
 };
 
 #endif

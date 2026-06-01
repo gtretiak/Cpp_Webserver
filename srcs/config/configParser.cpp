@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 09:18:39 by dopereir          #+#    #+#             */
-/*   Updated: 2026/05/29 00:23:19 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/06/02 00:39:58 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -82,14 +82,19 @@ bool configParser::isNumber(const std::string& value) const {
 }
 
 bool configParser::isIPv4(const std::string& value) const {
-	int dots = 0;
-	std::string::size_type start = 0;
+	std::string::size_type	start = 0;
+	int						dots = 0;
+	int						octet;
+
 	while (start <= value.size()) {
-		std::string::size_type end = value.find('.', start);
-		std::string part = value.substr(start, end == std::string::npos ? std::string::npos : end - start);
+		std::string::size_type	end = value.find('.', start);
+		std::string 			part = value.substr(start, end == std::string::npos ? std::string::npos : end - start);
 		if (part.empty() || !isNumber(part)) {
 			return false;
 		}
+		octet = std::atoi(part.c_str());
+		if (octet < 0 || octet > 255)
+			return false;
 		++dots;
 		if (end == std::string::npos) {
 			break;
@@ -188,26 +193,38 @@ std::vector<std::string> configParser::collectArguments() {
 }
 
 Listen configParser::parseListen(const std::string& value, size_t line) const {
-	Listen listen;
+	Listen	listen;
+
 	if (value.size() >= 5 && value.substr(0, 5) == "unix:") {
 		listen.type = Listen::UNIX_SOCK;
 		listen.addr = value.substr(5);
-		listen.port = 0;
+		listen.port = -1;
 		if (listen.addr.empty()) {
 			throw parseError(formatError(line, "Invalid unix socket path"));
 		}
 		return listen;
 	}
-	std::string::size_type colon = value.rfind(':');
+	std::string::size_type	colon = value.rfind(':');
 	if (colon != std::string::npos) {
-		std::string host = value.substr(0, colon);
-		std::string port = value.substr(colon + 1);
+		std::string	host = value.substr(0, colon);
+		std::string	port = value.substr(colon + 1);
 		if (!isNumber(port)) {
 			throw parseError(formatError(line, "Invalid listen port"));
 		}
 		listen.port = std::atoi(port.c_str());
 		listen.addr = host;
-		listen.type = isIPv4(host) ? Listen::IP_PORT : Listen::HOST_PORT;
+		if (host == "*")
+			listen.type = Listen::IP_PORT;
+		else if (isIPv4(host))
+			listen.type = Listen::IP_PORT;
+		else
+			listen.type = Listen::HOST_PORT;
+		return listen;
+	}
+	if (isIPv4(value)) {
+		listen.port = 80;
+		listen.addr = value;
+		listen.type = Listen::IP_PORT;
 		return listen;
 	}
 	if (!isNumber(value)) {

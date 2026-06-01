@@ -6,17 +6,17 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 11:54:28 by dopereir          #+#    #+#             */
-/*   Updated: 2026/06/01 09:44:58 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/06/02 00:19:50 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef LOCATIONCONFIG_HPP
 # define LOCATIONCONFIG_HPP
-
 # include <cstddef>
 # include <map>
 # include <string>
 # include <vector>
+# include <iostream>
 
 struct Listen {
 	enum listenTypeImpl {
@@ -31,7 +31,7 @@ struct Listen {
 	std::string	addr;
 	int			port;
 
-	Listen() : type(PORT), addr(), port(0) {}
+	Listen() : type(PORT), addr(""), port(-1) {}
 };
 
 struct limitExcept {
