@@ -1,17 +1,40 @@
 NAME = run
 FLAGS = -Wall -Werror -Wextra -std=c++98 -g
 SRC_DIR = srcs/
+OBJ_DIR = obj/
+
 HTTP_DIR = http/
 CGI_DIR = cgi/
 CONFIG_DIR = config/
 SERVER_DIR = server/
-SRC = $(SRC_DIR)main.cpp \
-      $(SRC_DIR)$(HTTP_DIR)ErrorPageGenerator.cpp $(SRC_DIR)$(HTTP_DIR)HttpParser.cpp $(SRC_DIR)$(HTTP_DIR)HttpRequest.cpp $(SRC_DIR)$(HTTP_DIR)HttpResponse.cpp $(SRC_DIR)$(HTTP_DIR)HttpException.cpp $(SRC_DIR)$(HTTP_DIR)StatusCodes.cpp $(SRC_DIR)$(HTTP_DIR)RequestHandler.cpp $(SRC_DIR)$(HTTP_DIR)StaticRequestHandler.cpp $(SRC_DIR)$(HTTP_DIR)MimeTypes.cpp $(SRC_DIR)$(HTTP_DIR)Router.cpp \
-      $(SRC_DIR)$(CGI_DIR)CgiRequestHandler.cpp \
-#     $(SRC_DIR)$(SERVER_DIR) \ put your server source .cpp files here TODO
-#     $(SRS_DIR)$(CONFIG_DIR) put your config source .cpp files here TODO
 
-OBJ = $(addprefix ./, $(SRC:.cpp=.o))
+CONFIG_SRCS =	configParser.cpp \
+				locationConfig.cpp \
+				serverConfig.cpp
+
+HTTP_SRCS =		HttpParser.cpp \
+				HttpRequest.cpp \
+				HttpResponse.cpp \
+				HttpException.cpp \
+				StatusCodes.cpp \
+				RequestHandler.cpp \
+				StaticRequestHandler.cpp \
+				MimeTypes.cpp \
+				Router.cpp \
+				ErrorPageGenerator.cpp
+
+CGI_SRCS =	CgiRequestHandler.cpp
+
+#SERVER_SRCS = PUT THE SERVER FOLDER SRCS FILES HERE
+
+
+SRC =	$(SRC_DIR)main.cpp \
+		$(addprefix $(SRC_DIR)$(HTTP_DIR), $(HTTP_SRCS)) \
+		$(addprefix $(SRC_DIR)$(CGI_DIR), $(CGI_SRCS)) \
+		$(addprefix $(SRC_DIR)$(CONFIG_DIR), $(CONFIG_SRCS)) \
+		#$(addprefix $(SRC_DIR)$(CGI_DIR), $(CGI_SRCS))
+
+OBJ = $(addprefix $(OBJ_DIR), $(SRC:.cpp=.o))
 
 all: $(NAME)
 
@@ -19,13 +42,12 @@ $(NAME): $(OBJ)
 	@c++ $(OBJ) -o $(NAME)
 	@echo "Compiled successfully!"
 
-%.o:%.cpp
+$(OBJ_DIR)%.o: %.cpp
+	@mkdir -p $(dir $@)
 	@c++ $(FLAGS) -c $< -o $@
 
-.PHONY: clean fclean re
-
 clean:
-	@rm -rf $(OBJ)
+	@rm -rf $(OBJ_DIR)
 	@echo "Objects removed"
 
 fclean: clean
@@ -33,3 +55,5 @@ fclean: clean
 	@echo "Program removed"
 
 re: fclean all
+
+.PHONY: clean fclean re
