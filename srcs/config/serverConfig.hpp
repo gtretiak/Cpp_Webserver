@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/21 23:20:08 by dopereir          #+#    #+#             */
-/*   Updated: 2026/05/28 23:47:39 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/06/02 21:43:25 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,6 +30,8 @@ public:
 	std::map<int, std::string>	_error_pages;
 	std::vector<locationConfig>	_locations;
 	std::vector<directiveValue>	_directives;
+	std::map<int, std::string>	_return;
+	bool						_has_return;
 
 	serverConfig();
 	serverConfig(const serverConfig& other);

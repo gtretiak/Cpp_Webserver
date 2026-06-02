@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 09:18:39 by dopereir          #+#    #+#             */
-/*   Updated: 2026/06/02 00:39:58 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/06/02 22:13:38 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -69,7 +69,7 @@ std::string configParser::formatError(size_t line, const std::string& message) c
 	return out.str();
 }
 
-bool configParser::isNumber(const std::string& value) const {
+bool	configParser::isNumber(const std::string& value) const {
 	if (value.empty()) {
 		return false;
 	}
@@ -81,7 +81,7 @@ bool configParser::isNumber(const std::string& value) const {
 	return true;
 }
 
-bool configParser::isIPv4(const std::string& value) const {
+bool	configParser::isIPv4(const std::string& value) const {
 	std::string::size_type	start = 0;
 	int						dots = 0;
 	int						octet;
@@ -104,7 +104,21 @@ bool configParser::isIPv4(const std::string& value) const {
 	return (dots == 4);
 }
 
-std::string configParser::join(const std::vector<std::string>& values) const {
+bool	configParser::isURL(const std::string& value, size_t line) const {
+	const std::string	http = "http://";
+	const std::string	https = "https://";
+
+	if (value.compare(0, http.size(), http) != 0 && value.compare(0, https.size(), https) != 0) {
+		throw parseError(formatError(line, "invalid url"));
+	}
+	if ((value.compare(0, http.size(), http) == 0 && value.size() == http.size())
+		|| (value.compare(0, https.size(), https) == 0 && value.size() == https.size())) {
+		throw parseError(formatError(line, "invalid url"));
+	}
+	return true;
+}
+
+std::string	configParser::join(const std::vector<std::string>& values) const {
 	std::ostringstream out;
 	for (size_t i = 0; i < values.size(); ++i) {
 		if (i != 0) {
@@ -115,7 +129,7 @@ std::string configParser::join(const std::vector<std::string>& values) const {
 	return out.str();
 }
 
-std::vector<configParser::Token> configParser::tokenize(const std::string& content) const {
+std::vector<configParser::Token>	configParser::tokenize(const std::string& content) const {
 	std::vector<Token> tokens;
 	std::string current;
 	size_t line = 1;
@@ -184,7 +198,7 @@ std::vector<configParser::Token> configParser::tokenize(const std::string& conte
 	return tokens;
 }
 
-std::vector<std::string> configParser::collectArguments() {
+std::vector<std::string>	configParser::collectArguments() {
 	std::vector<std::string> args;
 	while (!eof() && !isSymbol(";") && !isSymbol("{") && !isSymbol("}")) {
 		args.push_back(consume().value);
@@ -208,7 +222,8 @@ Listen configParser::parseListen(const std::string& value, size_t line) const {
 	if (colon != std::string::npos) {
 		std::string	host = value.substr(0, colon);
 		std::string	port = value.substr(colon + 1);
-		if (!isNumber(port)) {
+		if (!isNumber(port) || std::atoi(port.c_str()) < 1
+				|| std::atoi(port.c_str()) > MAX_PORT_VAL) {
 			throw parseError(formatError(line, "Invalid listen port"));
 		}
 		listen.port = std::atoi(port.c_str());
@@ -232,6 +247,8 @@ Listen configParser::parseListen(const std::string& value, size_t line) const {
 	}
 	listen.type = Listen::PORT;
 	listen.port = std::atoi(value.c_str());
+	if (listen.port < 0 || listen.port > MAX_PORT_VAL)
+		throw parseError(formatError(line, "Invalid port number"));
 	return listen;
 }
 
@@ -261,6 +278,40 @@ size_t configParser::parseSize(const std::string& value, size_t line) const {
 		return number * 1024 * 1024 * 1024;
 	}
 	throw parseError(formatError(line, "Unknown size suffix: " + suffix));
+}
+
+std::map<int, std::string>	configParser::parseReturn(const std::vector<std::string> &value, size_t line) const {
+	std::map<int, std::string>	_return_redirect;
+	int							status_code = 302;
+
+	if (value.empty() || value.size() > 2) {
+		throw	parseError(formatError(line, "return directive has too many arguments"));
+	}
+	if (value.size() == 1) {
+		if (isNumber(value[0])) {
+			status_code = std::atoi(value[0].c_str());
+			_return_redirect[status_code] = "";
+			return _return_redirect;
+		}
+		if (isURL(value[0], line)) {
+			_return_redirect[status_code] = value[0];
+			return _return_redirect;
+		}
+		throw parseError(formatError(line, "invalid return directive"));
+	}
+	if (!isNumber(value[0])) {
+		throw parseError(formatError(line, "invalid return directive"));
+	}
+	status_code = std::atoi(value[0].c_str());
+	if (status_code >= 300 && status_code <= 308) {
+		if (isURL(value[1], line)) {
+			_return_redirect[status_code] = value[1];
+		}
+	}
+	else {
+		_return_redirect[status_code] = value[1];
+	}
+	return _return_redirect;
 }
 
 void configParser::appendAllowedMethod(limitExcept& methods, const std::string& value) {
@@ -346,6 +397,15 @@ void configParser::applyServerDirective(serverConfig& server,
 			appendAllowedMethod(server._allowed_methods, args[i]);
 		}
 	}
+	else if (name == "return") {
+		if (args.empty()) {
+			throw parseError(formatError(line, "return directive expects at least one argument"));
+		}
+		if (!server._has_return) {
+			server._return = parseReturn(args, line);
+			server._has_return = true;
+		}
+	}
 }
 
 void configParser::applyLocationDirective(locationConfig& location,
@@ -427,6 +487,15 @@ void configParser::applyLocationDirective(locationConfig& location,
 		if (args.size() != 1)
 			throw parseError(formatError(line, "upload_store expects a path, the field cannot be empty"));
 		location._cgi.upload_store = args[0];
+	}
+	else if (name == "return") {
+		if (args.empty()) {
+			throw parseError(formatError(line, "return directive expects at least one argument"));
+		}
+		if (!location._has_return) {
+			location._return = parseReturn(args, line);
+			location._has_return = true;
+		}
 	}
 }
 

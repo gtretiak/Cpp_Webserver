@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/28 23:24:56 by dopereir          #+#    #+#             */
-/*   Updated: 2026/05/29 00:23:41 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/06/02 22:12:53 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,8 +27,8 @@ locationConfig::locationConfig()
 	_error_pages(),
 	_try_files(),
 	_directives(),
-	_redirect(),
-	_redirect_code(0),
+	_return(),
+	_has_return(false),
 	_cgi(),
 	_has_cgi(false) {}
 
@@ -46,8 +46,8 @@ locationConfig::locationConfig(const locationConfig& other)
 	_error_pages(other._error_pages),
 	_try_files(other._try_files),
 	_directives(other._directives),
-	_redirect(other._redirect),
-	_redirect_code(other._redirect_code),
+	_return(other._return),
+	_has_return(other._has_return),
 	_cgi(other._cgi),
 	_has_cgi(other._has_cgi) {
 }
@@ -67,8 +67,8 @@ locationConfig& locationConfig::operator=(const locationConfig& other) {
 		_error_pages = other._error_pages;
 		_try_files = other._try_files;
 		_directives = other._directives;
-		_redirect = other._redirect;
-		_redirect_code = other._redirect_code;
+		_return = other._return;
+		_has_return = other._has_return;
 		_cgi = other._cgi;
 		_has_cgi = other._has_cgi;
 	}

@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 18:13:28 by dopereir          #+#    #+#             */
-/*   Updated: 2026/06/02 00:01:55 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/06/02 22:08:39 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,6 +73,16 @@ void	globalConfig::printData() const
 		{
 			std::cout << "    - " << ep_it->first << ": " << ep_it->second << std::endl;
 		}
+		std::cout << "  Return:" << std::endl;
+		if (it->_has_return)
+		{
+			std::map<int, std::string>::const_iterator ret_it = it->_return.begin();
+
+			std::cout << "    - code: " <<  ret_it->first << std::endl;
+			std::cout << "    - url/text: " << ret_it->second << std::endl;
+		}
+		else
+			std::cout << "    - not set" << std::endl;
 		std::cout << "  Locations:" << std::endl;
 		for (size_t i = 0; i < it->_locations.size(); ++i)
 		{
@@ -80,11 +90,11 @@ void	globalConfig::printData() const
 			printLocations(it->_locations[i]);
 			std::cout << "************ END OF LOCATION BLOCK " << i << " ************" << std::endl;
 		}
-		std::cout << "  Directives:" << std::endl;
+		/*std::cout << "  Directives:" << std::endl;
 		for (size_t i = 0; i < it->_directives.size(); ++i)
 		{
 			printDirective(it->_directives[i]);
-		}
+		}*/
 	}
 	
 }

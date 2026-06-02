@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/22 23:27:24 by dopereir          #+#    #+#             */
-/*   Updated: 2026/05/28 23:24:43 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/06/02 21:19:50 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,7 +26,9 @@ serverConfig::serverConfig()
 	_has_limit_except(false),
 	_error_pages(),
 	_locations(),
-	_directives() {}
+	_directives(),
+	_return(),
+	_has_return(false) {}
 
 serverConfig::serverConfig(const serverConfig& other)
 	: _listens(other._listens),
@@ -42,7 +44,9 @@ serverConfig::serverConfig(const serverConfig& other)
 	_has_limit_except(other._has_limit_except),
 	_error_pages(other._error_pages),
 	_locations(other._locations),
-	_directives(other._directives) {}
+	_directives(other._directives),
+	_return(other._return),
+	_has_return(other._has_return) {}
 
 serverConfig& serverConfig::operator=(const serverConfig& other) {
 	if (this != &other) {
@@ -60,6 +64,8 @@ serverConfig& serverConfig::operator=(const serverConfig& other) {
 		_error_pages = other._error_pages;
 		_locations = other._locations;
 		_directives = other._directives;
+		_return = other._return;
+		_has_return = other._has_return;
 	}
 	return *this;
 }
