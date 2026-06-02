@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 09:18:39 by dopereir          #+#    #+#             */
-/*   Updated: 2026/06/02 22:13:38 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/06/02 23:27:51 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -104,16 +104,16 @@ bool	configParser::isIPv4(const std::string& value) const {
 	return (dots == 4);
 }
 
-bool	configParser::isURL(const std::string& value, size_t line) const {
+bool	configParser::isURL(const std::string& value) const {
 	const std::string	http = "http://";
 	const std::string	https = "https://";
 
 	if (value.compare(0, http.size(), http) != 0 && value.compare(0, https.size(), https) != 0) {
-		throw parseError(formatError(line, "invalid url"));
+		return false;
 	}
 	if ((value.compare(0, http.size(), http) == 0 && value.size() == http.size())
 		|| (value.compare(0, https.size(), https) == 0 && value.size() == https.size())) {
-		throw parseError(formatError(line, "invalid url"));
+		return false;
 	}
 	return true;
 }
@@ -293,7 +293,7 @@ std::map<int, std::string>	configParser::parseReturn(const std::vector<std::stri
 			_return_redirect[status_code] = "";
 			return _return_redirect;
 		}
-		if (isURL(value[0], line)) {
+		if (isURL(value[0])) {
 			_return_redirect[status_code] = value[0];
 			return _return_redirect;
 		}
@@ -304,9 +304,11 @@ std::map<int, std::string>	configParser::parseReturn(const std::vector<std::stri
 	}
 	status_code = std::atoi(value[0].c_str());
 	if (status_code >= 300 && status_code <= 308) {
-		if (isURL(value[1], line)) {
+		if (isURL(value[1])) {
 			_return_redirect[status_code] = value[1];
 		}
+		if (value[1][0] == '/')
+			_return_redirect[status_code] = value[1];
 	}
 	else {
 		_return_redirect[status_code] = value[1];
@@ -495,6 +497,10 @@ void configParser::applyLocationDirective(locationConfig& location,
 		if (!location._has_return) {
 			location._return = parseReturn(args, line);
 			location._has_return = true;
+
+			std::map<int, std::string>::iterator it = location._return.begin();
+			std::cout << "code: " << it->first
+					<< "\t\turl/text: " << it->second << std::endl;
 		}
 	}
 }

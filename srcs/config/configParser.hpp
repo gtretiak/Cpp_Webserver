@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 09:10:22 by dopereir          #+#    #+#             */
-/*   Updated: 2026/06/02 20:59:24 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/06/02 22:49:45 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,7 +51,7 @@ private:
 	std::string			formatError(size_t line, const std::string& message) const;
 	bool				isNumber(const std::string& value) const;
 	bool				isIPv4(const std::string& value) const;
-	bool				isURL(const std::string& value, size_t line) const;
+	bool				isURL(const std::string& value) const;
 	std::string			join(const std::vector<std::string>& values) const;
 	void				appendAllowedMethod(limitExcept& methods, const std::string& value);
 

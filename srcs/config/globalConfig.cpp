@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 18:13:28 by dopereir          #+#    #+#             */
-/*   Updated: 2026/06/02 22:08:39 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/06/02 22:51:23 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -148,12 +148,22 @@ void	globalConfig::printLocations(const locationConfig& location) const
 	{
 		std::cout << "    - " << location._try_files[i] << std::endl;
 	}
-	std::cout << "  Directives:" << std::endl;
+	/*std::cout << "  Directives:" << std::endl;
 	for (size_t i = 0; i < location._directives.size(); ++i)
 	{
 		printDirective(location._directives[i]);
-	}
-	std::cout << "  Redirect: " << location._redirect << " with code "<< location._redirect_code << std::endl;
+	}*/
+	std::cout << "  Return:" << std::endl;
+		if (location._has_return)
+		{
+			std::map<int, std::string>::const_iterator ret_it = location._return.begin();
+
+			std::cout << "    - code: " <<  ret_it->first << std::endl;
+			std::cout << "    - url/text: " << ret_it->second << std::endl;
+		}
+		else
+			std::cout << "    - not set" << std::endl;
+	
 	if (location._has_cgi)    {
 		std::cout << "  CGI Config:" << std::endl;
 		std::cout << "    Upload Store: " << location._cgi.upload_store << std::endl;
