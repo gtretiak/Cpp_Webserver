@@ -16,7 +16,18 @@ basically overrides directives from the parent server block. Key directives are:
 
 - root ->			filesystem root for this route
 - alias ->			alterative path
-- autoindex ->			directory listing (?)
+- autoindex ->			directory listing enable/disable (on/off) off by default
+	how requests should be handled:
+		example: request for /files/ ´curl http://localhost:8080/files/´
+		
+		Is /files/ a directory?
+			✔ Yes.
+		Does the directory contain an index file? (e.g., index.html, index.htm, index.php)
+			✘ No.			(if ✔Yes then return the index file)
+		Is autoindex enabled?
+			✘ No.			(if ✔Yes then return a directory listing, a htmil page with the content of the directory)
+		Then return 403 Forbidden.
+
 - index ->			default file for directories
 - limit_except ->		restrict allowed HTTP methods
 - server_name ->		sets a name for the virtual server (NOT MANDATORY)-> https://nginx.org/en/docs/http/ngx_http_core_module.html#server_name

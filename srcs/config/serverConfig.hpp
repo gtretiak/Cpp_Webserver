@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/21 23:20:08 by dopereir          #+#    #+#             */
-/*   Updated: 2026/06/02 21:43:25 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/06/03 15:49:12 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,7 @@ public:
 	std::vector<Listen>			_listens;
 	std::vector<std::string>	_server_names;
 	std::string					_root;
-	std::string					_alias;
+	std::string					_alias; //not mandatory, i guess
 	std::vector<std::string>	_index;
 	bool						_autoindex;
 	bool						_has_autoindex;

@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 11:54:28 by dopereir          #+#    #+#             */
-/*   Updated: 2026/06/02 22:11:14 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/06/03 16:54:25 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,28 +50,13 @@ struct directiveValue {
 
 struct cgiConfig {
 	std::map<std::string, std::string>	cgi_extension;
-	std::string							upload_store;
-};
-
-struct	httpRedirect {
-	enum redirectTypeImpl {
-		CODE,
-		CODE_URL,
-		CODE_TEXT
-	};
-	typedef httpRedirect::redirectTypeImpl	redirectType;
-
-	redirectType	type;
-	std::string		text;
-	std::string		URL;
-	int				code;
 };
 
 class	locationConfig {
 public:
-	std::string					_path;
+	std::string					_path; //location block argument defining the path
 	std::string					_root;
-	std::string					_alias;
+	std::string					_alias; //alias for root, not mandatory
 	std::vector<std::string>	_index;
 	bool						_autoindex;
 	bool						_has_autoindex;
@@ -84,6 +69,7 @@ public:
 	std::vector<directiveValue>	_directives;
 	std::map<int, std::string>	_return;
 	bool						_has_return;
+	std::string					upload_store;
 	cgiConfig					_cgi;
 	bool						_has_cgi;
 

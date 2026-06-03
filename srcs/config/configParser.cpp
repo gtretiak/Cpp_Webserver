@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 09:18:39 by dopereir          #+#    #+#             */
-/*   Updated: 2026/06/02 23:27:51 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/06/03 16:29:38 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -488,7 +488,7 @@ void configParser::applyLocationDirective(locationConfig& location,
 	else if (name == "upload_store") {
 		if (args.size() != 1)
 			throw parseError(formatError(line, "upload_store expects a path, the field cannot be empty"));
-		location._cgi.upload_store = args[0];
+		location.upload_store = args[0];
 	}
 	else if (name == "return") {
 		if (args.empty()) {
@@ -497,10 +497,6 @@ void configParser::applyLocationDirective(locationConfig& location,
 		if (!location._has_return) {
 			location._return = parseReturn(args, line);
 			location._has_return = true;
-
-			std::map<int, std::string>::iterator it = location._return.begin();
-			std::cout << "code: " << it->first
-					<< "\t\turl/text: " << it->second << std::endl;
 		}
 	}
 }

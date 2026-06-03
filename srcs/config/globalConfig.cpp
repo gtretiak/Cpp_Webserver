@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 18:13:28 by dopereir          #+#    #+#             */
-/*   Updated: 2026/06/02 22:51:23 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/06/03 16:29:47 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -101,16 +101,16 @@ void	globalConfig::printData() const
 
 void	globalConfig::printLocations(const locationConfig& location) const
 {
-	std::cout << "  Locations Block:" << std::endl;
-	std::cout << "  Location Path: " << location._path << std::endl;
-	std::cout << "  Root: " << location._root << std::endl;
-	std::cout << "  Alias: " << location._alias << std::endl;
-	std::cout << "  Index:" << std::endl;
+	std::cout << "		Locations Block:" << std::endl;
+	std::cout << "			Location Path: " << location._path << std::endl;
+	std::cout << "			Root: " << location._root << std::endl;
+	std::cout << "			Alias: " << location._alias << std::endl;
+	std::cout << "			Index:" << std::endl;
 	for (size_t i = 0; i < location._index.size(); ++i)
 	{
-		std::cout << "    - " << location._index[i] << std::endl;
+		std::cout << "				- " << location._index[i] << std::endl;
 	}
-	std::cout << "  Autoindex: " << (location._autoindex ? "on" : "off") << std::endl;
+	std::cout << "			Autoindex: " << (location._autoindex ? "on" : "off") << std::endl;
 	std::string clientMaxBodySize;
 	if (location._has_client_max_body_size)
 	{
@@ -120,7 +120,7 @@ void	globalConfig::printLocations(const locationConfig& location) const
 	}
 	else
 		clientMaxBodySize = "not set";
-	std::cout << "  Client Max Body Size: " << clientMaxBodySize << std::endl;
+	std::cout << "			Client Max Body Size: " << clientMaxBodySize << std::endl;
 
 	std::string methods;
 	if (location._has_limit_except)
@@ -137,40 +137,40 @@ void	globalConfig::printLocations(const locationConfig& location) const
 	}
 	else
 		methods = "not set";
-	std::cout << "  Allowed Methods: " << methods << std::endl;
-	std::cout << "  Error Pages:" << std::endl;
+	std::cout << "			Allowed Methods: " << methods << std::endl;
+	std::cout << "			Error Pages:" << std::endl;
 	for (std::map<int, std::string>::const_iterator ep_it = location._error_pages.begin(); ep_it != location._error_pages.end(); ++ep_it)
 	{
-		std::cout << "    - " << ep_it->first << ": " << ep_it->second << std::endl;
+		std::cout << "				- " << ep_it->first << ": " << ep_it->second << std::endl;
 	}
-	std::cout << "  Try Files:" << std::endl;
+	std::cout << "			Try Files:" << std::endl;
 	for (size_t i = 0; i < location._try_files.size(); ++i)
 	{
-		std::cout << "    - " << location._try_files[i] << std::endl;
+		std::cout << "				- " << location._try_files[i] << std::endl;
 	}
 	/*std::cout << "  Directives:" << std::endl;
 	for (size_t i = 0; i < location._directives.size(); ++i)
 	{
 		printDirective(location._directives[i]);
 	}*/
-	std::cout << "  Return:" << std::endl;
+	std::cout << "			Return:" << std::endl;
 		if (location._has_return)
 		{
 			std::map<int, std::string>::const_iterator ret_it = location._return.begin();
 
-			std::cout << "    - code: " <<  ret_it->first << std::endl;
-			std::cout << "    - url/text: " << ret_it->second << std::endl;
+			std::cout << "				- code: " <<  ret_it->first << std::endl;
+			std::cout << "				- url/text: " << ret_it->second << std::endl;
 		}
 		else
-			std::cout << "    - not set" << std::endl;
+			std::cout << "				- not set" << std::endl;
 	
 	if (location._has_cgi)    {
-		std::cout << "  CGI Config:" << std::endl;
-		std::cout << "    Upload Store: " << location._cgi.upload_store << std::endl;
-		std::cout << "    CGI Extensions:" << std::endl;
+		std::cout << "			CGI Config:" << std::endl;
+		std::cout << "				Upload Store: " << location.upload_store << std::endl;
+		std::cout << "				CGI Extensions:" << std::endl;
 		for (std::map<std::string, std::string>::const_iterator cgi_it = location._cgi.cgi_extension.begin(); cgi_it != location._cgi.cgi_extension.end(); ++cgi_it)
 		{
-			std::cout << "      - " << cgi_it->first << ": " << cgi_it->second << std::endl;
+			std::cout << "				- " << cgi_it->first << ": " << cgi_it->second << std::endl;
 		}
 	}
 }
