@@ -2,7 +2,9 @@
 #define HTTPREQUEST_HPP
 #include <map>
 #include <string>
+#include <iostream>
 
+//REQUEST LINE: METHOD + TARGET(URL/URI){devide in two, path and query} + PROTOCOL_VERSION
 class	HttpRequest {
 	private:
 		std::string	method_;
