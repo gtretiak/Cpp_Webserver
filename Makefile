@@ -25,14 +25,16 @@ HTTP_SRCS =		HttpParser.cpp \
 
 CGI_SRCS =	CgiRequestHandler.cpp
 
-#SERVER_SRCS = PUT THE SERVER FOLDER SRCS FILES HERE
-
+SERVER_SRCS =	Connection.cpp \
+				Socket.cpp \
+				EventLoop.cpp \
+				Server.cpp
 
 SRC =	$(SRC_DIR)main.cpp \
 		$(addprefix $(SRC_DIR)$(HTTP_DIR), $(HTTP_SRCS)) \
 		$(addprefix $(SRC_DIR)$(CGI_DIR), $(CGI_SRCS)) \
 		$(addprefix $(SRC_DIR)$(CONFIG_DIR), $(CONFIG_SRCS)) \
-		#$(addprefix $(SRC_DIR)$(CGI_DIR), $(CGI_SRCS))
+		$(addprefix $(SRC_DIR)$(SERVER_DIR), $(SERVER_SRCS))
 
 OBJ = $(addprefix $(OBJ_DIR), $(SRC:.cpp=.o))
 
