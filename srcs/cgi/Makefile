@@ -5,6 +5,10 @@ INCLUDES = -I../http -I.
 TARGET = cgi_demo
 SRCS = main.cpp \
 	CgiRequestHandler.cpp \
+	CgiRequestHandler_config.cpp \
+	CgiRequestHandler_execution.cpp \
+	CgiRequestHandler_redirect.cpp \
+	CgiRequestHandler_utils.cpp \
 	../http/HttpRequest.cpp \
 	../http/HttpResponse.cpp \
 	../http/HttpException.cpp \

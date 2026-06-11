@@ -5,7 +5,8 @@
 
 int main(int ac, char **av) {
 	globalConfig	config;
-	HttpRequest req;
+	HttpRequest		req;
+	HttpResponse	res;
 
 	if (ac != 2) {
 		std::cout << "./cgi_demo <config_file>" << std::endl;
@@ -15,15 +16,18 @@ int main(int ac, char **av) {
 		config = configParser().parse(av[1]);
 
 		buildRequest(req);
+		std::cout << "\n*************** printRequest() *************** " << std::endl;
 		printRequest(req);
 
 		CgiRequestHandler	cgi(&config);
 
-		cgi.extractMetaVars(req);
+		cgi.handleRequest(req, res);
 		std::cout << "\n*************** printMetaVars() *************** " << std::endl;
 		cgi.printMetaVars();
 		std::cout << "\n*************** printEnvp() *************** " << std::endl;
 		cgi.printEnvp();
+		std::cout << "\n*************** printResponse() *************** " << std::endl;
+		printResponse(res);
 	}
 	catch (const HttpException &e) {
 		std::cerr << "Failed to build CGI request: " << e.code()
@@ -32,3 +36,4 @@ int main(int ac, char **av) {
 	}
 	return 0;
 }
+
