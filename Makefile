@@ -23,7 +23,7 @@ HTTP_SRCS =		HttpParser.cpp \
 				Router.cpp \
 				ErrorPageGenerator.cpp
 
-CGI_SRCS =	CgiRequestHandler.cpp
+CGI_SRCS =	CgiRequestHandler.cpp CgiRequestHandler_config.cpp CgiRequestHandler_execution.cpp CgiRequestHandler_redirect.cpp CgiRequestHandler_utils.cpp
 
 SERVER_SRCS =	Connection.cpp \
 				Socket.cpp \
