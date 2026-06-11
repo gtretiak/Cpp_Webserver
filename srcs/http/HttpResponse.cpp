@@ -21,18 +21,12 @@ static std::string	getCurrentDate() {
 	return (std::string(buf));
 }
 
-HttpResponse::HttpResponse() : version_("HTTP/1.1"), statusCode_(200),
-								statusText_(StatusCodes::getStatus(200)),
-								has_status_(false) {
+HttpResponse::HttpResponse() : version_("HTTP/1.1"), statusCode_(200),	statusText_(StatusCodes::getStatus(200)), has_status_(false) {
 	date_ = getCurrentDate();
 	//this->setHeader("server", "Our Server");
 }
 
-HttpResponse::HttpResponse(const std::string &serverName) : version_("HTTP/1.1"),
-															serverName_(serverName),
-															statusCode_(200),
-															statusText_(StatusCodes::getStatus(200)),
-															has_status_(false) {
+HttpResponse::HttpResponse(const std::string &serverName) : version_("HTTP/1.1"), serverName_(serverName), statusCode_(200), statusText_(StatusCodes::getStatus(200)), has_status_(false) {
 	date_ = getCurrentDate();
 	//this->setHeader("server", serverName_);
 }
