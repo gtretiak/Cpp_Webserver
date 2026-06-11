@@ -6,6 +6,10 @@
 #include <string>
 
 #include "server/Server.hpp"
+#include "server/Connection.hpp"
+
+#include "config/globalConfig.hpp"
+#include "config/configParser.hpp"
 
 #include "http/HttpParser.hpp"
 #include "http/HttpResponse.hpp"
@@ -13,14 +17,14 @@
 #include "http/HttpException.hpp"
 #include "http/RequestHandler.hpp"
 #include "http/StaticRequestHandler.hpp"
-#include "cgi/CgiRequestHandler.hpp"
 #include "http/Router.hpp"
 #include "http/ErrorPageGenerator.hpp"
-#include "server/Connection.hpp"
 
-static int runHttpTests(const std::string &configFile)
+#include "cgi/CgiRequestHandler.hpp"
+
+static int runHttpTests(const globalConfig &config)
 {
-	Router router(configFile);
+	Router router(config);
 	HttpParser parser;
 
 	std::string requests[] = {
@@ -132,8 +136,9 @@ int main(int argc, char **argv)
 
 	try
 	{
+		globalConfig	config = configParser().parse(argv[1]);
 		if (argc == 3 && std::string(argv[2]) == "--http-tests")
-			return runHttpTests(argv[1]);
+			return runHttpTests(config);
 
 		Server server;
 
