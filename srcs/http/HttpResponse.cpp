@@ -47,11 +47,9 @@ std::string	HttpResponse::toString() const {
 		for (std::map<std::string, std::string>::const_iterator i = this->headers_.begin(); i != this->headers_.end(); i++)
 		ss << i->first << ": " << i->second << "\r\n";
 	}
+	ss << "\r\n";
 	if (!this->body_.empty())
-	{
-		ss << "\r\n";
 		ss << this->body_;
-	}
 	return (ss.str());
 }
 void	HttpResponse::setVersion(const std::string &v) {
@@ -80,10 +78,15 @@ int	HttpResponse::getStatusCode() {
 }
 
 void	HttpResponse::setBody(const std::string &b) {//MAYBE NOT SET CONTENT HERE
-	/*std::ostringstream	ss;
-	ss << b.length();
-	this->setHeader("content-length", ss.str());*/
-	this->body_ = b;
+	std::ostringstream	ss;
+	if (!b.empty())
+	{
+		this->body_ = b;
+		ss << b.length();
+	}
+	else
+		ss << 0;
+	this->setHeader("content-length", ss.str());
 }
 static std::string	toLower(const std::string &key) {
 	std::string	res = key;
