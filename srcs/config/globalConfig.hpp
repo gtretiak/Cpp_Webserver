@@ -6,13 +6,14 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 00:35:52 by dopereir          #+#    #+#             */
-/*   Updated: 2026/06/01 23:02:59 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/06/11 00:43:43 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef GLOBALCONFIG_HPP
 # define GLOBALCONFIG_HPP
 # include "serverConfig.hpp"
+# define CLIENT_MAX_BODY_SIZE 1048576
 
 struct	globalConfig {
 	std::vector<serverConfig>	servers;
