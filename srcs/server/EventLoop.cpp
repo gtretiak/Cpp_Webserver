@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   EventLoop.cpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nogioni- <nogioni-@student.42.fr>          +#+  +:+       +#+        */
+/*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 21:03:51 by nogioni-          #+#    #+#             */
-/*   Updated: 2026/06/10 21:20:42 by nogioni-         ###   ########.fr       */
+/*   Updated: 2026/06/16 22:52:41 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,7 +49,7 @@ void EventLoop::addListenFd(int fd)
 	_listenFds.push_back(fd);
 }
 
-void EventLoop::run()
+void EventLoop::run() //HANDLE CGI NON-BLOCKING STATES HERE?
 {
 	_running = true;
 
@@ -67,8 +67,8 @@ void EventLoop::run()
 		//iterates backards bacause closeClient() might remove elements from the array
 		for (int i = static_cast<int>(_pollFds.size()) - 1; i >= 0; --i)
 		{
-			int fd = _pollFds[i].fd;
-			short revents = _pollFds[i].revents;
+			int		fd = _pollFds[i].fd;
+			short	revents = _pollFds[i].revents;
 
 			if (revents == 0)
 				continue;

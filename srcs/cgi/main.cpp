@@ -1,4 +1,5 @@
 #include "CgiRequestHandler.hpp"
+#include "../http/Router.hpp"
 #include "../http/HttpException.hpp"
 #include "../config/configParser.hpp"
 #include <iostream>
@@ -15,17 +16,22 @@ int main(int ac, char **av) {
 	try {
 		config = configParser().parse(av[1]);
 
+		Router	router(&config);
+
 		buildRequest(req);
 		std::cout << "\n*************** printRequest() *************** " << std::endl;
 		printRequest(req);
 
-		CgiRequestHandler	cgi(&config);
+		//CgiRequestHandler	cgi(&config);
 
-		cgi.handleRequest(req, res);
-		std::cout << "\n*************** printMetaVars() *************** " << std::endl;
+		//cgi.handleRequest(req, res);
+		/*std::cout << "\n*************** printMetaVars() *************** " << std::endl;
 		cgi.printMetaVars();
-		std::cout << "\n*************** printEnvp() *************** " << std::endl;
-		cgi.printEnvp();
+		std::cout << "\n*************** printResponse() *************** " << std::endl;
+		printResponse(res);*/
+
+		std::cout <<"\n************** resolve() **************" << std::endl;
+		router.resolve(req, res);
 		std::cout << "\n*************** printResponse() *************** " << std::endl;
 		printResponse(res);
 	}

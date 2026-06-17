@@ -13,6 +13,7 @@ class	HttpRequest {
 		std::string	query_;
 		std::string	version_;
 		std::string	body_;
+		int			redirectCount_;
 		std::map<std::string, std::string>	headers_;
 		bool	isKeepAlive() const;
 	public:
@@ -33,6 +34,10 @@ class	HttpRequest {
 		bool	hasHeader(const std::string &key) const;
 		std::string	getHeader(const std::string &key) const;
 		const std::map<std::string, std::string> &getHeaders() const;
+		void	incrementRedirectCount();
+		int		getRedirectCount( ) const;
+		void	setRedirectCount( int value );
+
 		~HttpRequest();
 };
 

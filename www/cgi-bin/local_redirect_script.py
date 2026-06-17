@@ -7,7 +7,7 @@
 
 import sys
 
-sys.stdout.write("location: /cgi-bin/perl_script.py?/images/test.png\r\n")
+sys.stdout.write("location: /cgi-bin/perl_script.pl?/images/test.png\r\n")
 
 sys.stdout.write("\r\n")
 

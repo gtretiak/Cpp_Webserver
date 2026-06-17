@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   EventLoop.hpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nogioni- <nogioni-@student.42.fr>          +#+  +:+       +#+        */
+/*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 21:03:53 by nogioni-          #+#    #+#             */
-/*   Updated: 2026/06/10 21:17:37 by nogioni-         ###   ########.fr       */
+/*   Updated: 2026/06/16 22:51:20 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,19 +22,20 @@
 class	EventLoop
 {
 	private:
-		std::vector<struct pollfd> _pollFds; //keeps all the fds monitorized by poll()
-		std::vector<int> _listenFds; //keeps only the server sockets
-		std::map<int, Connection> _connections; //list of all clients connected at the time 
-												//(Connection: complete status of the client)
-		bool _running; //controls the main loop
+		std::vector<struct pollfd>		_pollFds;		//keeps all the fds monitorized by poll()
+		std::vector<int>				_listenFds;		//keeps only the server sockets
+		std::map<int, Connection>		_connections;	//list of all clients connected at the time 
+						//(Connection: complete status of the client)
+
+		bool	_running; //controls the main loop
 
 	public:
 		EventLoop();
 		~EventLoop();
 
-		void addListenFd(int fd); //adds a server socket to the loop
-		void run(); //main function of the server
-		void stop(); //ends loop
+		void	addListenFd(int fd); //adds a server socket to the loop
+		void	run();	//main function of the server
+		void	stop();	//ends loop
 
 	// can't be called directly by who is using the class 
 	// only make sense inside the run() flow

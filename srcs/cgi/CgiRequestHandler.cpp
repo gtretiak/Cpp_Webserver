@@ -6,13 +6,14 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/09 18:19:23 by dopereir          #+#    #+#             */
-/*   Updated: 2026/06/11 00:51:42 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/06/12 23:14:54 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "CgiRequestHandler.hpp"
 #include "../http/MimeTypes.hpp"
 #include "../http/HttpException.hpp"
+#include "../http/Router.hpp"
 
 static std::string	toLowerString( std::string value ) {
 	for (std::string::size_type i = 0; i < value.size(); ++i)
@@ -54,13 +55,17 @@ CgiRequestHandler::CgiRequestHandler() {
 	_envp = NULL;
 }
 
-CgiRequestHandler::CgiRequestHandler( const globalConfig* config)
+CgiRequestHandler::CgiRequestHandler( globalConfig* config)
 	: _globalConfig(config), _serverSetting(NULL), _locSetting(NULL), _envp(NULL) {}
 
 CgiRequestHandler::~CgiRequestHandler() {}
 
 void	CgiRequestHandler::setMetaVar( std::string& key, std::string& value ) {
 	_meta_vars.insert(std::pair<std::string, std::string>(key, value));
+}
+
+void	CgiRequestHandler::setConfig( globalConfig* config ) {
+	_globalConfig = config;
 }
 
 std::string	CgiRequestHandler::getMetaVar( std::string& key ) const {
@@ -184,22 +189,42 @@ void	CgiRequestHandler::parseCgiHttpResponse( HttpResponse &res, std::string &cg
 
 void	CgiRequestHandler::handleRequest(HttpRequest &req, HttpResponse &res) {
 	cgiResponseType	type;
+	Router			internalRouter;
+	HttpResponse	newRes;
+	HttpRequest		newReq;
 
 	extractMetaVars( req );
 	cgiExecutor(req, res); //still need to handle timeout throw 504
 
 	type = classifyCgiResponse(res);
+	internalRouter.setConfig(_globalConfig);
 	switch(type) {
 		case CGI_DOCUMENT:
 			std::cout << "@@@@@DEBUG: CGI DOCUMENT" << std::endl;
 			break;
 		case CGI_LOCAL_REDIR:
+			newReq = processLocalRedir(res);
+			newReq.setRedirectCount(req.getRedirectCount() + 1);
+			
+			std::cout << "******* PRINT INTERNAL REQUEST ******" << std::endl;
+			printRequest(newReq);
+
+			if (req.getRedirectCount() > 10)
+				throw HttpException(508, "Loop Detected");
+			
+			std::cout << "****** INTERNAL RESOLVE ******" << std::endl;
+			internalRouter.resolve(newReq, newRes);
+			res = newRes;
+
 			std::cout << "@@@@@DEBUG: CGI LOCAL REDIR" << std::endl;
+
 			break;
 		case CGI_CLIENT_REDIR:
+			processClientRedir(res);
 			std::cout << "@@@@@DEBUG: CGI CLIENT REDIR" << std::endl;
 			break;
 		case CGI_CLIENT_DOC_REDIR:
+			processClientRedirWithDocument(res);
 			std::cout << "@@@@@DEBUG: CGI CLIENT DOCUMENT REDIR" << std::endl;
 			break;
 		default:
@@ -207,6 +232,8 @@ void	CgiRequestHandler::handleRequest(HttpRequest &req, HttpResponse &res) {
 			break;
 	}
 	
+	std::cout << "\n*************** handlerRequest()->printEnvp() *************** " << std::endl;
+	printEnvp();
 	if(_envp)
 		freeEnvp( );
 }

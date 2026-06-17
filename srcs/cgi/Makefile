@@ -9,11 +9,14 @@ SRCS = main.cpp \
 	CgiRequestHandler_execution.cpp \
 	CgiRequestHandler_redirect.cpp \
 	CgiRequestHandler_utils.cpp \
+	../http/Router.cpp \
 	../http/HttpRequest.cpp \
 	../http/HttpResponse.cpp \
 	../http/HttpException.cpp \
 	../http/RequestHandler.cpp \
+	../http/StaticRequestHandler.cpp \
 	../http/StatusCodes.cpp \
+	../http/MimeTypes.cpp \
 	../config/globalConfig.cpp \
 	../config/locationConfig.cpp \
 	../config/serverConfig.cpp \

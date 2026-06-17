@@ -148,3 +148,5 @@ int main(int argc, char **argv)
 
 	return 0;
 }
+
+/// timeout of the cgi request must be handled in the main eventloop

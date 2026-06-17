@@ -1,22 +1,37 @@
 #include "Router.hpp"
+#include "../cgi/CgiRequestHandler.hpp"
 
-Router::Router(const std::string &config) : config_(config) {}
-Router::Router(const Router &An) : config_(An.config_) {}
-Router	&Router::operator=(const Router &An) {
-	if (this != &An)
-		this->config_ = An.config_;
-	return (*this);
+Router::Router( ) : config_(NULL) {}
+
+Router::Router(globalConfig* config) : config_(config), cgiHandler(config) {}
+
+Router::Router(Router &other) : config_(other.config_),
+	staticHandler(other.staticHandler), cgiHandler(other.config_) {
 }
-RequestHandler	&Router::resolve(const HttpRequest &req) {//req and res? TODO
-	//examine request
-	//decide on type
-	//routing to it
-	std::string	path = req.getPath();
-	std::string	method = req.getMethod();//do I need this? TODO
-	if (path.find("/cgi-bin") != std::string::npos)
-		return (this->cgiHandler);//or simply call TODO
-	// otherwise static. Hence to get location config with findLocation(path) TODO
-	return (this->staticHandler);//same but with location TODO
+
+void	Router::setConfig( globalConfig* config ) {
+	this->config_ = config;
+	this->cgiHandler.setConfig(config);
 }
-Router::~Router() {
+
+void	Router::resolve( HttpRequest &req, HttpResponse &res ) {
+	std::string	target = req.getUrl();
+
+	std::cout << " **** RESOLVE(): target: " << target << std::endl;
+	if (target.find("/cgi-bin") != std::string::npos) {
+
+		std::cout << " **** GOT HERE " << std::endl;
+		cgiHandler.handleRequest(req, res);
+
+		std::cout << "\n*************** printMetaVars() *************** " << std::endl;
+		cgiHandler.printMetaVars();
+		
+		return ;
+	}
+	// otherwise static.
+	//staticHandler.handleRequest(req, res);
+	
+	return ;
 }
+
+Router::~Router() {}

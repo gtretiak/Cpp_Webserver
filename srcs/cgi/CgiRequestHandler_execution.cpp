@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 17:42:33 by dopereir          #+#    #+#             */
-/*   Updated: 2026/06/10 17:53:32 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/06/15 21:25:07 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -159,22 +159,32 @@ void	CgiRequestHandler::cgiExecutor( HttpRequest& req, HttpResponse& res ) {
 	if (pid == 0) {
 		childRun(ctx);
 	}
+	time_t	start = time(NULL);
+	
+
 	close(ctx.stdin_pipe[0]);
 	close(ctx.stdout_pipe[1]);
 
-	writeRequestBodyToCgi(req, ctx.stdin_pipe);
+	writeRequestBodyToCgi(req, ctx.stdin_pipe);//CAUSES BLOCK	
 	close(ctx.stdin_pipe[1]);
 	
-	ctx.cgiOutput = readCgiOutput(ctx.stdout_pipe[0]);
+	//CGI OUTPUT READNESS MUST BE AT EVENT LOOP
+	ctx.cgiOutput = readCgiOutput(ctx.stdout_pipe[0]);//CAUSE BLOCK
 	close(ctx.stdout_pipe[0]);
 
-	if (waitpid(pid, &status, 0) == -1)
+	//CHILD EXIT LOGIC MUST BE AT EVENT LOOP
+	if (waitpid(pid, &status, 0) == -1) // <-- THIS HANGS, FIX TO NOT HANG -> waitpid(pid, WNOHANG)
 		throw HttpException(500, "waitpid failed");
-	if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
+	if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+		std::cout << "FAILED HERE"<< std::endl;
 		throw HttpException(502, "CGI execution failed");
+	}
+		
 
 	parseCgiHttpResponse(res, ctx.cgiOutput);
 	std::cout << "\n*************** CGI OUTPUT *************** " << std::endl;
-	if (!ctx.cgiOutput.empty())
+	if (!ctx.cgiOutput.empty()) {
 		std::cout << ctx.cgiOutput;
+		std::cout << "**** END ****" << std::endl;
+	}
 }

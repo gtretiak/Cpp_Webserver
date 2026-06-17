@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/05 11:14:54 by dopereir          #+#    #+#             */
-/*   Updated: 2026/06/11 00:43:35 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/06/12 23:13:35 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,8 @@
 #include <sys/types.h>
 #include <utility>
 #include <set>
+
+class	Router;
 
 typedef struct	s_ctx_exec {
 	std::string	execRoot;
@@ -53,14 +55,14 @@ class	CgiRequestHandler : public RequestHandler {
 		std::map<std::string, std::string>	_meta_vars;
 		static std::set<std::string>		_CgiMetaVarsList;
 		
-		const globalConfig*				_globalConfig;
-		const serverConfig*				_serverSetting;
-		const locationConfig*			_locSetting;
-		char**							_envp;
+		globalConfig*				_globalConfig;
+		serverConfig*				_serverSetting;
+		locationConfig*				_locSetting;
+		char**						_envp;
 
 	public:
 		CgiRequestHandler();
-		explicit CgiRequestHandler( const globalConfig* config );
+		explicit CgiRequestHandler( globalConfig* config );
 		~CgiRequestHandler();
 
 		//handleRequest main call
@@ -84,6 +86,9 @@ class	CgiRequestHandler : public RequestHandler {
 
 		//redirects handlers
 		cgiResponseType	classifyCgiResponse( HttpResponse& res );
+		HttpRequest		processLocalRedir( HttpResponse& res );
+		void			processClientRedir( HttpResponse& res );
+		void			processClientRedirWithDocument( HttpResponse& res );
 		
 
 		//meta-variables operations
@@ -93,19 +98,22 @@ class	CgiRequestHandler : public RequestHandler {
 
 		//globalConfig interface functions
 		void					getConfigSettings( HttpRequest &req );
-		const locationConfig*	findCgiLocation( const serverConfig& server, const std::string& pathTarget) const;
+		locationConfig*			findCgiLocation( serverConfig& server, const std::string& pathTarget) const;
 		int						getClientMaxBodySize( );
 
 		//meta-variable getters
 		std::string	getPathInfo( std::string& requestUrl );
+		std::string	getScriptName( std::string& requestUrl );
 		std::string	getPathTranslated( );
 		std::string	getMetaVar( std::string& key ) const ;
 		std::string	getQueryFromURI( const std::string& URI );
+		std::string	getPathFromURI( const std::string& URI );
 		
 		//setters
 		static std::set<std::string>&	initCgiMetaVars( );
 		void							insertStaticMetaVars( );
 		void							setMetaVar( std::string& key, std::string& value );
+		void							setConfig( globalConfig* config );
 		
 		//utilities
 		void	printMetaVars( );

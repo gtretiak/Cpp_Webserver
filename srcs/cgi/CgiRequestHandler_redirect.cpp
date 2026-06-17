@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 14:17:59 by dopereir          #+#    #+#             */
-/*   Updated: 2026/06/11 12:04:11 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/06/15 21:07:11 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,4 +55,44 @@ CgiRequestHandler::cgiResponseType	CgiRequestHandler::classifyCgiResponse( HttpR
 		type = CGI_DOCUMENT;
 	}
 	return type;
+}
+
+
+/// @brief METHOD always become GET,
+///
+/// @param res 
+HttpRequest	CgiRequestHandler::processLocalRedir( HttpResponse& res) {
+	HttpRequest	newReq;
+	std::string	target;
+	std::string	path;
+	std::string	query;
+	
+	target = res.getHeader("location");
+	path = getPathFromURI(target);
+	query = getQueryFromURI(target);
+
+	newReq.setUrl(target);
+	newReq.setPath(path);
+	newReq.setQuery(query);
+	newReq.setMethod("GET");
+	newReq.setVersion("HTTP/1.1");
+
+	return newReq;
+	//build new request
+	//request line = METHOD + LOCATION (URL) + VERSION
+	//send back to router
+	//let the router decide, static file? cgi? error? ...
+	
+	//basically will loop back to the router until is a static or cgi plain
+	// document response
+	// must avoid recursion so we need to detect multiple local redirects.
+}
+
+void	CgiRequestHandler::processClientRedir( HttpResponse& res ) {
+	res.setVersion("HTTP/1.1");
+	res.setHeader("status", "302");
+}
+
+void	CgiRequestHandler::processClientRedirWithDocument( HttpResponse& res ) {
+	printResponse(res);
 }

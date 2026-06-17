@@ -37,6 +37,20 @@ HttpResponse::HttpResponse(const std::string &serverName) : version_("HTTP/1.1")
 	//this->setHeader("server", serverName_);
 }
 
+HttpResponse&	HttpResponse::operator=(const HttpResponse &other) {
+	if (this != &other) {
+		version_ = other.version_;
+		serverName_ = other.serverName_;
+		statusCode_ = other.statusCode_;
+		statusText_ = other.statusText_;
+		body_ = other.body_;
+		date_ = other.date_;
+		headers_ = other.headers_;
+		has_status_ = other.has_status_;
+	}
+	return *this;
+}
+
 std::string	HttpResponse::toString() const {
 	std::ostringstream	ss;
 

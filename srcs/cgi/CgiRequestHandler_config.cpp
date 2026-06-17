@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 17:54:34 by dopereir          #+#    #+#             */
-/*   Updated: 2026/06/10 17:55:47 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/06/12 15:26:42 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,6 +56,46 @@ std::string CgiRequestHandler::getPathInfo( std::string& requestUrl) {
 	return path.substr(matchEnd);
 }
 
+std::string CgiRequestHandler::getScriptName( std::string& requestUrl ) {
+	static const std::string cgiExtensions[] = { ".py", ".sh", ".pl", ".php", ".go" };
+
+	std::string				path = requestUrl;
+	std::string::size_type	queryPos = path.find('?');
+	if (queryPos != std::string::npos)
+		path = path.substr(0, queryPos);
+	if (path.empty())
+		return std::string();
+	std::string::size_type matchPos = std::string::npos;
+	std::string::size_type matchEnd = std::string::npos;
+
+	for (size_t i = 0; i < sizeof(cgiExtensions) / sizeof(cgiExtensions[0]); ++i) {
+		std::string::size_type pos = path.rfind(cgiExtensions[i]);
+		if (pos == std::string::npos)
+			continue;
+
+		std::string::size_type end = pos + cgiExtensions[i].size();
+		if (end != path.size() && path[end] != '/')
+			continue;
+		if (matchPos == std::string::npos || pos > matchPos) {
+			matchPos = pos;
+			matchEnd = end;
+		}
+	}
+	if (matchPos == std::string::npos)
+		return std::string();
+	return path.substr(0, matchEnd);
+}
+
+std::string CgiRequestHandler::getPathFromURI(const std::string& URI) {
+	if (URI.empty())
+		return std::string();
+	std::string::size_type	pos = URI.find('?');
+	if (pos == std::string::npos)
+		return URI;
+	return URI.substr(0, pos);
+}
+
+
 std::string	CgiRequestHandler::getPathTranslated( ) {
 	if (!_locSetting)
 		return std::string();
@@ -85,13 +125,13 @@ void	CgiRequestHandler::getConfigSettings( HttpRequest& req ) {
 	if (!_globalConfig) {
 		throw HttpException(500, "CGI configuration unavailable");
 	}
-	std::vector<serverConfig>::const_iterator	it = _globalConfig->servers.begin();
-	std::string									pathTarget = req.getPath();
-	const locationConfig*						bestLoc = NULL;
-	const serverConfig*							bestServer = NULL;
+	std::vector<serverConfig>::iterator	it = _globalConfig->servers.begin();
+	std::string							pathTarget = req.getUrl();
+	locationConfig*						bestLoc = NULL;
+	serverConfig*						bestServer = NULL;
 	
 	for (; it != _globalConfig->servers.end(); ++it) {
-		const locationConfig*	loc = this->findCgiLocation(*it, pathTarget);
+		locationConfig*	loc = this->findCgiLocation(*it, pathTarget);
 
 		if (loc && (!bestLoc || loc->_path.size() > bestLoc->_path.size())) {
 			bestLoc = loc;
@@ -113,10 +153,10 @@ void	CgiRequestHandler::getConfigSettings( HttpRequest& req ) {
 /// @param pathTarget Target from the request line.
 /// @return NULL if not find, and caller is expected to throw a 404 not found
 /// @return , if finds return the locationConfig data set instance.
-const locationConfig* CgiRequestHandler::findCgiLocation( const serverConfig& server,
+locationConfig*	CgiRequestHandler::findCgiLocation( serverConfig& server,
 		const std::string& pathTarget) const
 {
-	const locationConfig*	best = NULL;
+	locationConfig*	best = NULL;
 	size_t					i;
 
 	for (i = 0; i < server._locations.size(); ++i) {
@@ -155,11 +195,11 @@ void	CgiRequestHandler::extractMetaVars( HttpRequest& req ) {
 
 	getConfigSettings( req );
 	insertStaticMetaVars( );
-	_meta_vars["REQUEST-METHOD"] = req.getMethod();	//mandatory in Request Line
-	_meta_vars["SCRIPT-NAME"] = req.getPath();		//mandatory in Request Line
-	_meta_vars["QUERY-STRING"] = req.getQuery();	//mandatory in Request Line
-	_meta_vars["SERVER-PROTOCOL"] = req.getVersion();//mandatory in Request Line
 	tmp_url = req.getUrl();
+	_meta_vars["REQUEST-METHOD"] = req.getMethod();		//mandatory in Request Line
+	_meta_vars["SCRIPT-NAME"] = getScriptName(tmp_url);	//mandatory in Request Line
+	_meta_vars["QUERY-STRING"] = req.getQuery();		//if available, else ""
+	_meta_vars["SERVER-PROTOCOL"] = req.getVersion();	//mandatory in Request Line
 	_meta_vars["PATH-INFO"] = getPathInfo( tmp_url );
 	_meta_vars["PATH-TRANSLATED"] = getPathTranslated();
 	for (; it != _CgiMetaVarsList.end(); ++it) {

@@ -1,7 +1,8 @@
 #include "HttpRequest.hpp"
 #include "HttpException.hpp"
 
-HttpRequest::HttpRequest() {}
+HttpRequest::HttpRequest() : redirectCount_(0) {}
+
 void	HttpRequest::setMethod(const std::string &m) {
 	this->method_ = m;
 }
@@ -69,6 +70,18 @@ const std::map<std::string, std::string>	&HttpRequest::getHeaders() const {
 bool	HttpRequest::hasHeader(const std::string &key) const {
 	std::string	lowKey = toLower(key);
 	return (this->headers_.find(lowKey) != this->headers_.end());
+}
+
+void	HttpRequest::incrementRedirectCount( ) {
+	redirectCount_++;
+}
+
+int	HttpRequest::getRedirectCount( ) const {
+	return redirectCount_;
+}
+
+void	HttpRequest::setRedirectCount( int value ) {
+	redirectCount_ = value;
 }
 
 HttpRequest::~HttpRequest() {}

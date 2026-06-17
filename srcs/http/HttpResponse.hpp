@@ -17,6 +17,8 @@ class	HttpResponse {
 	public:
 		HttpResponse();
 		HttpResponse(const std::string &serverName);
+		HttpResponse	&operator=(const HttpResponse &other);
+
 		std::string	toString() const;
 		void		setVersion(const std::string &v);
 		void		setStatus(int code);
