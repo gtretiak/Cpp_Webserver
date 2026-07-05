@@ -1,7 +1,35 @@
 #include "HttpRequest.hpp"
 #include "HttpException.hpp"
 
-HttpRequest::HttpRequest() : redirectCount_(0) {}
+HttpRequest::HttpRequest() {
+	method_ = "";
+	url_ = "";
+	path_ = "";
+	query_ = "";
+	version_ = "";
+	body_ = "";
+	headers_.clear();
+	redirectCount_ = 0;
+}
+
+HttpRequest::HttpRequest( const HttpRequest& other ) : method_(other.method_),
+	url_(other.url_), path_(other.path_), query_(other.query_), version_(other.version_),
+	body_(other.body_), redirectCount_(other.redirectCount_), headers_(other.headers_) {
+}
+
+HttpRequest&	HttpRequest::operator=(const HttpRequest& other) {
+	if (this != &other) {
+		method_ = other.method_;
+		url_ = other.url_;
+		path_ = other.path_;
+		query_ = other.query_;
+		version_ = other.version_;
+		body_ = other.body_;
+		redirectCount_ = other.redirectCount_;
+		headers_ = other.headers_;
+	}
+	return *this;
+}
 
 void	HttpRequest::setMethod(const std::string &m) {
 	this->method_ = m;

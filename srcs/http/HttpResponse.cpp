@@ -61,9 +61,9 @@ std::string	HttpResponse::toString() const {
 		for (std::map<std::string, std::string>::const_iterator i = this->headers_.begin(); i != this->headers_.end(); i++)
 		ss << i->first << ": " << i->second << "\r\n";
 	}
+	ss << "\r\n";
 	if (!this->body_.empty())
 	{
-		ss << "\r\n";
 		ss << this->body_;
 	}
 	return (ss.str());

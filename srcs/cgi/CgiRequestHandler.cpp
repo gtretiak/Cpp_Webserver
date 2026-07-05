@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/09 18:19:23 by dopereir          #+#    #+#             */
-/*   Updated: 2026/06/12 23:14:54 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/07/01 00:28:26 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 #include "../http/MimeTypes.hpp"
 #include "../http/HttpException.hpp"
 #include "../http/Router.hpp"
+#include "../server/Connection.hpp"
 
 static std::string	toLowerString( std::string value ) {
 	for (std::string::size_type i = 0; i < value.size(); ++i)
@@ -187,53 +188,138 @@ void	CgiRequestHandler::parseCgiHttpResponse( HttpResponse &res, std::string &cg
 		res.setBody(body);//SETS content-lenght automatically ISSUE!
 }
 
-void	CgiRequestHandler::handleRequest(HttpRequest &req, HttpResponse &res) {
-	cgiResponseType	type;
-	Router			internalRouter;
-	HttpResponse	newRes;
-	HttpRequest		newReq;
+void	CgiRequestHandler::handleRequest(Connection& conn) {
+	//cgiResponseType	type;
+	//Router			internalRouter;
+	//HttpResponse	newRes;
+	//HttpRequest		newReq;
 
-	extractMetaVars( req );
-	cgiExecutor(req, res); //still need to handle timeout throw 504
+	extractMetaVars( conn.req );
+	std::cout << "\n*************** pre cgiExecutor() *************** " << std::endl;
+	cgiExecutor(conn); //still need to handle timeout throw 504
+	std::cout << "\n*************** pos cgiExecutor() *************** " << std::endl;
 
-	type = classifyCgiResponse(res);
-	internalRouter.setConfig(_globalConfig);
-	switch(type) {
+	//IDEALLY THE HANDLEREQUEST ENDS HERE,  CLASSIFY AND REDIRECT SHOULD BE HANDLED IN EVENTLOOP
+	
+	//std::cout << "\n*************** pre classifyCgi() *************** " << std::endl;
+	//type = classifyCgiResponse(conn.res);
+	//std::cout << "\n*************** pos classifyCgi() *************** " << std::endl;
+	//internalRouter.setConfig(_globalConfig);
+	/*switch(type) {
 		case CGI_DOCUMENT:
 			std::cout << "@@@@@DEBUG: CGI DOCUMENT" << std::endl;
 			break;
 		case CGI_LOCAL_REDIR:
-			newReq = processLocalRedir(res);
-			newReq.setRedirectCount(req.getRedirectCount() + 1);
+			newReq = processLocalRedir(conn.res);
+			newReq.setRedirectCount(conn.req.getRedirectCount() + 1);
 			
 			std::cout << "******* PRINT INTERNAL REQUEST ******" << std::endl;
 			printRequest(newReq);
 
-			if (req.getRedirectCount() > 10)
+			if (conn.req.getRedirectCount() > 10)
 				throw HttpException(508, "Loop Detected");
 			
 			std::cout << "****** INTERNAL RESOLVE ******" << std::endl;
 			internalRouter.resolve(newReq, newRes);
-			res = newRes;
+			conn.res = newRes;
 
 			std::cout << "@@@@@DEBUG: CGI LOCAL REDIR" << std::endl;
 
 			break;
 		case CGI_CLIENT_REDIR:
-			processClientRedir(res);
+			processClientRedir(conn.res);
 			std::cout << "@@@@@DEBUG: CGI CLIENT REDIR" << std::endl;
 			break;
 		case CGI_CLIENT_DOC_REDIR:
-			processClientRedirWithDocument(res);
+			processClientRedirWithDocument(conn.res);
 			std::cout << "@@@@@DEBUG: CGI CLIENT DOCUMENT REDIR" << std::endl;
 			break;
 		default:
 			std::cout << "@@@@@DEBUG: NONE" << std::endl;
 			break;
-	}
+	}*/
 	
-	std::cout << "\n*************** handlerRequest()->printEnvp() *************** " << std::endl;
+	/*std::cout << "\n*************** handlerRequest()->printEnvp() *************** " << std::endl;
 	printEnvp();
 	if(_envp)
-		freeEnvp( );
+		freeEnvp( );*/
+}
+
+void	CgiRequestHandler::handleRequest( HttpRequest &req, HttpResponse &res ) {
+	std::cout << "IGNORE: CgiRequestHandler::handleRequest() called" << std::endl;
+
+	std::cout << "IGNORE: Request Method: " << req.getMethod() << std::endl;
+	std::cout << "IGNORE: Response BODY: " << res.getBody() << std::endl;
+}
+
+/// @brief 
+/// @param conn 
+void	CgiRequestHandler::finalizeCgi(Connection& conn) {
+	cgiResponseType	type;
+	HttpResponse	newRes;
+	HttpRequest		newReq;
+
+	parseCgiHttpResponse(conn.res, conn.cgiData.outputBuffer);
+	type = classifyCgiResponse(conn.res);
+	switch(type) {
+		case CGI_DOCUMENT:
+			std::cout << "@@@@@@@@ DEBUG: CGI DOCUMENT" << std::endl;
+			conn.state = WRITING;
+			break;
+		case CGI_LOCAL_REDIR:
+			newReq = processLocalRedir(conn.res);
+			newReq.setRedirectCount(conn.req.getRedirectCount() + 1);
+			
+			std::cout << "******* PRINT INTERNAL REQUEST ******" << std::endl;
+			printRequest(newReq);
+
+			if (conn.req.getRedirectCount() > 10)
+				throw HttpException(508, "Loop Detected");
+
+			if (newReq.getUrl().find("/cgi-bin") != std::string::npos) {
+				conn.req = newReq;
+				conn.res = HttpResponse();//maybe issue is here
+				conn.cgiData.outputBuffer.clear();
+				extractMetaVars(conn.req);
+				cgiExecutor(conn);
+				//need to push back fds into pollfds and cgifdToPollfd
+				conn.state = RUNNING;
+				std::cout << "@@@@@@@@ DEBUG: CGI LOCAL REDIR -> CGI" << std::endl;
+			} else {
+				Router	tmpRouter;
+				tmpRouter.setConfig(_globalConfig);
+				tmpRouter.setConnEnv(conn);
+				tmpRouter.resolve(newReq, conn.res);
+				//need to push back fds
+				conn.state = WRITING;
+				std::cout << "@@@@@@@@ DEBUG: CGI LOCAL REDIR -> STATIC" << std::endl;
+			}
+			std::cout << "@@@@@@@@ DEBUG: CGI LOCAL REDIR (END)" << std::endl;
+
+			break;
+		case CGI_CLIENT_REDIR:
+			processClientRedir(conn.res);
+			conn.state = WRITING;
+			std::cout << "@@@@@@@@ DEBUG: CGI CLIENT REDIR" << std::endl;
+			break;
+		case CGI_CLIENT_DOC_REDIR:
+			processClientRedirWithDocument(conn.res);
+			conn.state = WRITING;
+			std::cout << "@@@@@@@@ DEBUG: CGI CLIENT DOCUMENT REDIR" << std::endl;
+			break;
+		default:
+			std::cout << "@@@@@@@@ DEBUG: NONE" << std::endl;
+			throw HttpException(502, "Bad Gateway: Invalid CGI output no type match");
+			break;
+	}
+	
+	if (conn.state != RUNNING) {
+		if (_envp)
+			freeEnvp();
+		_envp = NULL;
+		conn.cgiData.pid = -1;
+		conn.cgiData.inFd = -1;
+		conn.cgiData.outFd = -1;
+		conn.cgiData.cgiLastActivity = 0;
+	}
 }

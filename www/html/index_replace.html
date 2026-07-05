@@ -1,0 +1,43 @@
+<!-- index_replace.html -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>CGI Test Index Replace</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>body{font-family:Arial,Helvetica,sans-serif;padding:20px}</style>
+</head>
+<body>
+  <h1>CGI Test Index Replace</h1>
+  <p>Fetch the CGI output and replace the current document with it.</p>
+
+  <input id="cgiPath" type="text" value="/cgi-bin/py_script.py" style="width:60%;padding:.25rem;margin-right:.5rem">
+  <button id="runCgi">Load CGI and Replace Document</button>
+  <div id="status" style="margin-top:.5rem;color:#666">Ready</div>
+
+  <script>
+	async function loadAndReplace(url) {
+	  const status = document.getElementById('status');
+	  status.textContent = 'Requesting ' + url + ' ...';
+	  try {
+		const resp = await fetch(url, { credentials: 'same-origin' });
+		status.textContent = `HTTP ${resp.status} ${resp.statusText}`;
+		const html = await resp.text();
+		// Replace the entire document with the returned HTML
+		document.open();
+		document.write(html);
+		document.close();
+		// Optionally update the URL in the address bar without reloading
+		try { history.replaceState(null, '', url); } catch (e) { /* ignore */ }
+	  } catch (err) {
+		status.textContent = 'Fetch error: ' + err;
+	  }
+	}
+
+	document.getElementById('runCgi').addEventListener('click', function () {
+	  const path = document.getElementById('cgiPath').value.trim() || '/cgi-bin/hello.cgi';
+	  loadAndReplace(path);
+	});
+  </script>
+</body>
+</html>

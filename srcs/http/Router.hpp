@@ -4,6 +4,7 @@
 #include "StaticRequestHandler.hpp"
 #include "../config/globalConfig.hpp"
 #include "../cgi/CgiRequestHandler.hpp"
+#include "../server/Connection.hpp"
 #include "HttpRequest.hpp"
 
 class	CgiRequestHandler;
@@ -13,6 +14,7 @@ class	Router {
 		globalConfig*			config_;
 		StaticRequestHandler	staticHandler;
 		CgiRequestHandler		cgiHandler;
+		Connection*				CurrentConn_;
 
 		Router	&operator=(const Router &other);//do not use
 	public:
@@ -23,10 +25,7 @@ class	Router {
 		void	resolve( HttpRequest &req, HttpResponse& res );
 
 		void	setConfig( globalConfig* config);
-		//maybe function handler errors here? 
-		//examine request
-		//decide on type
-		//routing to it
+		void	setConnEnv( Connection& conn );
 		~Router();
 };
 

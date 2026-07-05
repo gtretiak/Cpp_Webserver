@@ -1,0 +1,73 @@
+@startuml
+title Webserv Runtime Workflow
+start
+
+:main entry point;
+if (Which executable?) then (srcs/main.cpp)
+  :validate CLI args;
+  :Server server;
+  :server.setup(4242);
+  :server.run();
+elseif (srcs/main_testing.cpp)
+  :parse config file;
+  :config.initServerRoutine(webserv, config.servers);
+  :webserv.run(config);
+elseif (srcs/config/main.cpp)
+  :parse config file;
+  :print parsed configuration;
+elseif (srcs/cgi/main.cpp)
+  :parse config file;
+  :build sample HttpRequest;
+  :Router::resolve(req, res);
+endif
+
+partition "startup" {
+  :configParser::parse(file);
+  :globalConfig populated with serverConfig list;
+  :globalConfig::initServerRoutine();
+  :Server::setup(Listen) for each listen directive;
+}
+
+partition "event loop" {
+  :EventLoop::run(config);
+  while (poll() has activity?) is (yes)
+    if (listen fd ready?) then (accept)
+      :acceptClient();
+      :create Connection;
+    else (client/cgi)
+      if (socket readable?) then (read)
+        :readClient();
+        :HttpParser::parseRequest();
+        if (request target is /cgi-bin?) then (cgi)
+          :Router::resolve();
+          :CgiRequestHandler::handleRequest(Connection&);
+          :extract meta vars;
+          :fork/exec CGI;
+          :write request body to CGI stdin;
+          :collect CGI stdout in poll loop;
+          :finalizeCgi();
+          if (CGI redirect?) then (yes)
+            :re-route to CGI or static target;
+          endif
+        else (static)
+          :StaticRequestHandler::handleRequest();
+        endif
+        :build HttpResponse;
+        :mark connection writable;
+      endif
+      if (socket writable?) then (write)
+        :writeClient();
+        if (response complete?) then (done)
+          if (keep-alive?) then (reset)
+            :resetConnection();
+          else (close)
+            :closeClient();
+          endif
+        endif
+      endif
+    endif
+  endwhile (no)
+}
+
+stop
+@enduml

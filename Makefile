@@ -9,6 +9,7 @@ CONFIG_DIR = config/
 SERVER_DIR = server/
 
 CONFIG_SRCS =	configParser.cpp \
+				globalConfig.cpp \
 				locationConfig.cpp \
 				serverConfig.cpp
 
@@ -23,14 +24,18 @@ HTTP_SRCS =		HttpParser.cpp \
 				Router.cpp \
 				ErrorPageGenerator.cpp
 
-CGI_SRCS =	CgiRequestHandler.cpp
+CGI_SRCS =	CgiRequestHandler.cpp \
+			CgiRequestHandler_config.cpp \
+			CgiRequestHandler_execution.cpp \
+			CgiRequestHandler_redirect.cpp \
+			CgiRequestHandler_utils.cpp
 
 SERVER_SRCS =	Connection.cpp \
 				Socket.cpp \
 				EventLoop.cpp \
 				Server.cpp
 
-SRC =	$(SRC_DIR)main.cpp \
+SRC =	$(SRC_DIR)main_testing.cpp \
 		$(addprefix $(SRC_DIR)$(HTTP_DIR), $(HTTP_SRCS)) \
 		$(addprefix $(SRC_DIR)$(CGI_DIR), $(CGI_SRCS)) \
 		$(addprefix $(SRC_DIR)$(CONFIG_DIR), $(CONFIG_SRCS)) \

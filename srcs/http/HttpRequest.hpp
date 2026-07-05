@@ -18,6 +18,9 @@ class	HttpRequest {
 		bool	isKeepAlive() const;
 	public:
 		HttpRequest();
+		HttpRequest( const HttpRequest& other );
+		HttpRequest &operator=(const HttpRequest& other);
+
 		void	setMethod(const std::string &m);
 		void	setUrl(const std::string &u);
 		void	setPath(const std::string &p);

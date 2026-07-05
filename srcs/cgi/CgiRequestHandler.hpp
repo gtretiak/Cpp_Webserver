@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/05 11:14:54 by dopereir          #+#    #+#             */
-/*   Updated: 2026/06/12 23:13:35 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/06/28 19:29:47 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,6 +30,7 @@
 #include <set>
 
 class	Router;
+class	Connection;
 
 typedef struct	s_ctx_exec {
 	std::string	execRoot;
@@ -66,13 +67,16 @@ class	CgiRequestHandler : public RequestHandler {
 		~CgiRequestHandler();
 
 		//handleRequest main call
-		void	handleRequest(HttpRequest &req, HttpResponse &res);
+		void	handleRequest(Connection& conn);
+		void	handleRequest( HttpRequest &req, HttpResponse &res );
+
+		//transitions
+		void	finalizeCgi(Connection& conn);
 
 		//execution
 		void		setExecContext( t_ctx_exec& ctx, HttpRequest& req );
 		void		childRun( t_ctx_exec& ctx );
-		void		cgiExecutor( HttpRequest &req, HttpResponse &res );
-		void		writeRequestBodyToCgi( HttpRequest &req, int stdin_pipe[2] );
+		void		cgiExecutor( Connection& conn );
 		std::string	readCgiOutput( int stdout_pipe );
 		std::string	getExecRoot( );
 		std::string	getExecScriptPath( std::string& root, std::string url );
@@ -119,6 +123,9 @@ class	CgiRequestHandler : public RequestHandler {
 		void	printMetaVars( );
 		void	printEnvp( );
 };
+
+//interface functions for eventloop
+//void	writeRequestBodyToCgi( HttpRequest &req, int stdin_pipe[2] );
 
 void	printRequest( HttpRequest &req );
 void	printResponse( HttpResponse &res );

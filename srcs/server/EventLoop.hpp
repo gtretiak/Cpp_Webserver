@@ -6,18 +6,21 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 21:03:53 by nogioni-          #+#    #+#             */
-/*   Updated: 2026/06/16 22:51:20 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/06/24 22:01:48 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef EVENTLOOP_HPP
 #define EVENTLOOP_HPP
 
-#include "Connection.hpp"
-
+#include "../http/HttpParser.hpp"
+#include "../cgi/CgiRequestHandler.hpp"
 #include <vector>
 #include <map>
 #include <poll.h>
+
+struct	globalConfig;
+class	Connection;
 
 class	EventLoop
 {
@@ -26,15 +29,19 @@ class	EventLoop
 		std::vector<int>				_listenFds;		//keeps only the server sockets
 		std::map<int, Connection>		_connections;	//list of all clients connected at the time 
 						//(Connection: complete status of the client)
-
-		bool	_running; //controls the main loop
+		std::map<int, int>				_cgifdToPollfd; //maps the cgi script fd to the pollfd index, so we can find it in the _pollFds vector
+		globalConfig*					_config;		//pointer to the global config, used to route requests
+		Router*							_router;		//used to route requests to the correct handler
+		bool							_running; //controls the main loop
 
 	public:
 		EventLoop();
+		EventLoop(const EventLoop& other);
+		EventLoop& operator=(const EventLoop& other);
 		~EventLoop();
 
 		void	addListenFd(int fd); //adds a server socket to the loop
-		void	run();	//main function of the server
+		void	run(globalConfig& config);	//main function of the server
 		void	stop();	//ends loop
 
 	// can't be called directly by who is using the class 
@@ -47,6 +54,8 @@ class	EventLoop
 		void writeClient(int clientFd); //sends answer
 		void closeClient(int clientFd); //closes and cleans a client
 		void updateClientEvents(int clientFd); //it changes which events the poll() function should observe
+		void	removeFdFromPollFds(int fd); //removes a fd from the pollfd vector, used when closing a client or cgi script
+		void	continueCgi(int pipeFd);
 };
 
 #endif
