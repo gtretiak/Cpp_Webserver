@@ -6,6 +6,7 @@
 #include "../cgi/CgiRequestHandler.hpp"
 #include "../server/Connection.hpp"
 #include "HttpRequest.hpp"
+#include "../config/globalConfig.hpp"
 
 class	CgiRequestHandler;
 
