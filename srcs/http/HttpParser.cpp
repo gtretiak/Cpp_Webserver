@@ -14,6 +14,7 @@
 #include "HttpParser.hpp"
 #include "HttpException.hpp"
 #include <string>
+#include <limits>
 #include <cctype>
 #include <cstdlib>
 #include <vector>
@@ -104,7 +105,7 @@ void	HttpParser::parseLine(const std::string &buf, HttpRequest *req) {
 			"Method Not Allowed: " + req->getMethod() + " is not supported");
 	while (i < buf.size() && buf[i] == ' ')
 		i++;
-	if (!buf[i])
+	if (i >= buf.size())
 		throw HttpException(400, "Bad Request");
 	while (i < buf.size() && buf[i] != ' ')
 		req->setUrl(req->getUrl() + buf[i++]);
@@ -130,7 +131,7 @@ void	HttpParser::parseLine(const std::string &buf, HttpRequest *req) {
 	req->setPath(normalize(req->getPath()));
 	while (buf[i] && buf[i] == ' ')
 		i++;
-	if (!buf[i])
+	if (i >= buf.size())
 		throw HttpException(400, "Bad Request");
 	while (buf[i] && buf[i] != ' ')
 		req->setVersion(req->getVersion() + buf[i++]);
@@ -200,8 +201,8 @@ void	HttpParser::parseHeaders(std::string &buf, HttpRequest *req) {
 void	HttpParser::parseBody(std::string &buf, HttpRequest *req) {
 	if (req->hasHeader("content-length"))
 	{
-		int	len = std::atoi(req->getHeader("content-length").c_str());
-		if (len < 0)
+		unsigned long	len = std::strtoul(req->getHeader("content-length").c_str(), NULL, 10);
+		if (len == 0 || len == std::numeric_limits<unsigned long>::max())
 			throw HttpException(400, "Invalid Content-Length: negative value");
 		if (static_cast<size_t>(len) > MAX_BODY_SIZE)
 			throw HttpException(413, "Payload Too Large");

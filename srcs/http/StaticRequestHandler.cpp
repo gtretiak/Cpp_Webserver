@@ -12,8 +12,8 @@ StaticRequestHandler::StaticRequestHandler(){}
 
 std::string	StaticRequestHandler::readFile(const std::string &path) {
 	int	fd = open(path.c_str(), O_RDONLY);
-/*	if (fd < 0)
-		throw HttpException(400, "File Not Found" + path);*/
+	if (fd < 0)
+		throw HttpException(400, "File Not Found" + path);
 	std::string	content;
 	char	buf[4096];
 	ssize_t	bytesRead = 1;
@@ -25,8 +25,8 @@ std::string	StaticRequestHandler::readFile(const std::string &path) {
 		content.append(buf, bytesRead);
 	}
 	close(fd);
-/*	if (bytesRead < 0)
-		throw HttpException(500, "Reading File Error");*/
+	if (bytesRead < 0)
+		throw HttpException(500, "Reading File Error");
 	return content;
 }
 

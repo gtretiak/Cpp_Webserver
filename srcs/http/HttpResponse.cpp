@@ -21,18 +21,12 @@ static std::string	getCurrentDate() {
 	return (std::string(buf));
 }
 
-HttpResponse::HttpResponse() : version_("HTTP/1.1"), statusCode_(200),
-								statusText_(StatusCodes::getStatus(200)),
-								has_status_(false) {
+HttpResponse::HttpResponse() : version_("HTTP/1.1"), statusCode_(200),	statusText_(StatusCodes::getStatus(200)), has_status_(false) {
 	date_ = getCurrentDate();
 	//this->setHeader("server", "Our Server");
 }
 
-HttpResponse::HttpResponse(const std::string &serverName) : version_("HTTP/1.1"),
-															serverName_(serverName),
-															statusCode_(200),
-															statusText_(StatusCodes::getStatus(200)),
-															has_status_(false) {
+HttpResponse::HttpResponse(const std::string &serverName) : version_("HTTP/1.1"), serverName_(serverName), statusCode_(200), statusText_(StatusCodes::getStatus(200)), has_status_(false) {
 	date_ = getCurrentDate();
 	//this->setHeader("server", serverName_);
 }
@@ -65,7 +59,6 @@ std::string	HttpResponse::toString() const {
 	if (!this->body_.empty())
 	{
 		ss << this->body_;
-	}
 	return (ss.str());
 }
 void	HttpResponse::setVersion(const std::string &v) {
@@ -94,10 +87,15 @@ int	HttpResponse::getStatusCode() {
 }
 
 void	HttpResponse::setBody(const std::string &b) {//MAYBE NOT SET CONTENT HERE
-	/*std::ostringstream	ss;
-	ss << b.length();
-	this->setHeader("content-length", ss.str());*/
-	this->body_ = b;
+	std::ostringstream	ss;
+	if (!b.empty())
+	{
+		this->body_ = b;
+		ss << b.length();
+	}
+	else
+		ss << 0;
+	this->setHeader("content-length", ss.str());
 }
 static std::string	toLower(const std::string &key) {
 	std::string	res = key;
