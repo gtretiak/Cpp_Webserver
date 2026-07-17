@@ -148,3 +148,22 @@ bool	HttpResponse::hasHeader(const std::string &k) const {
 }
 
 HttpResponse::~HttpResponse() {}
+
+void	HttpResponse::generateErrorPageResponse( const char *filepath ) {
+	char	*buffer = new char[4096];
+	int		fd = open(filepath, O_RDONLY);
+
+	std::cout << "****** debug: generateErrorPageResponse: filepath = " << filepath << std::endl;
+	while (read(fd, buffer, sizeof(buffer) - 1) != 0) {
+		buffer[sizeof(buffer) - 1] = '\0';
+		this->body_ += buffer;
+	}
+	std::cout << "****** debug: generateErrorPageResponse: body = " << this->body_ << std::endl;
+	std::ostringstream	ss;
+	ss << this->body_.length();
+	this->setVersion("HTTP/1.1");
+	this->setHeader("Content-Length", ss.str());
+	this->setHeader("Content-Type", "text/html");
+	delete[] buffer;
+	close(fd);
+}

@@ -3,6 +3,8 @@
 #include <string>
 #include <map>
 #include <iostream>
+#include <fcntl.h>
+#include <unistd.h>
 
 class	HttpResponse {
 	private:
@@ -37,6 +39,7 @@ class	HttpResponse {
 		
 
 		bool		hasHeader(const std::string &k) const;
+		void		generateErrorPageResponse( const char *filepath );
 		~HttpResponse();
 };
 

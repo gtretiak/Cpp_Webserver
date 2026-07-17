@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/09 18:19:23 by dopereir          #+#    #+#             */
-/*   Updated: 2026/07/01 00:28:26 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/07/16 00:11:20 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,7 +59,9 @@ CgiRequestHandler::CgiRequestHandler() {
 CgiRequestHandler::CgiRequestHandler( globalConfig* config)
 	: _globalConfig(config), _serverSetting(NULL), _locSetting(NULL), _envp(NULL) {}
 
-CgiRequestHandler::~CgiRequestHandler() {}
+CgiRequestHandler::~CgiRequestHandler() {
+	freeEnvp();
+}
 
 void	CgiRequestHandler::setMetaVar( std::string& key, std::string& value ) {
 	_meta_vars.insert(std::pair<std::string, std::string>(key, value));
@@ -95,7 +97,6 @@ void	CgiRequestHandler::extractHeader( std::string line, size_t colon, HttpRespo
 	key = toLowerString(line.substr(0, colon));
 	value = line.substr(colon + 1);
 
-	//std::cout << "DEBUG: AT EXTRACT HEADER: key: " << key << std::endl;
 	while(!value.empty() && value[0] == ' ')
 		value.erase(0, 1);
 	if (key == "status") {
@@ -113,13 +114,11 @@ void	CgiRequestHandler::extractHeader( std::string line, size_t colon, HttpRespo
 	}
 	else if (key == "location") {
 		if (!res.hasHeader("status") && res.hasStatusCode() == false) {
-			//res.setHeader("status", std::string("302"));//IN DOCUMENT RESPONSE CAN CAUSE A MISMATCH IN STATUSCODE AND STATUS HEADER CODE
 			res.setStatus(302);
 		}
 		if (!res.hasHeader("location")) {
 			res.setHeader("location", value);
 		}
-			
 	}
 	else if (key == "content-length") {
 		int	len = std::atoi(value.c_str());
@@ -133,12 +132,6 @@ void	CgiRequestHandler::extractHeader( std::string line, size_t colon, HttpRespo
 			key == "pragma" || key == "content-language") {
 		res.setHeader(key, value);
 	}
-	//still need date, server, connection and trasnfer-encoding
-
-	//comment this line because need further cgi response classification to handle redirects
-	/*if (!res.hasHeader("content-type"))
-		throw HttpException(502, "Bad Gateway: CGI response missing content-type header");
-	*/
 }
 
 void	CgiRequestHandler::parseHeaderSection( std::string& headerSection, HttpResponse& res ) {
@@ -182,74 +175,20 @@ void	CgiRequestHandler::parseCgiHttpResponse( HttpResponse &res, std::string &cg
 		if (location != std::string::npos)
 			res.setStatusBool(true);
 	}
-	
 	parseHeaderSection(headerSection, res);
-	if (body.size() > 0) //issue when the resquest is of type CGI_DOCUMENT
-		res.setBody(body);//SETS content-lenght automatically ISSUE!
+	if (body.size() > 0)
+		res.setBody(body);
 }
 
 void	CgiRequestHandler::handleRequest(Connection& conn) {
-	//cgiResponseType	type;
-	//Router			internalRouter;
-	//HttpResponse	newRes;
-	//HttpRequest		newReq;
-
 	extractMetaVars( conn.req );
-	std::cout << "\n*************** pre cgiExecutor() *************** " << std::endl;
 	cgiExecutor(conn); //still need to handle timeout throw 504
-	std::cout << "\n*************** pos cgiExecutor() *************** " << std::endl;
-
-	//IDEALLY THE HANDLEREQUEST ENDS HERE,  CLASSIFY AND REDIRECT SHOULD BE HANDLED IN EVENTLOOP
-	
-	//std::cout << "\n*************** pre classifyCgi() *************** " << std::endl;
-	//type = classifyCgiResponse(conn.res);
-	//std::cout << "\n*************** pos classifyCgi() *************** " << std::endl;
-	//internalRouter.setConfig(_globalConfig);
-	/*switch(type) {
-		case CGI_DOCUMENT:
-			std::cout << "@@@@@DEBUG: CGI DOCUMENT" << std::endl;
-			break;
-		case CGI_LOCAL_REDIR:
-			newReq = processLocalRedir(conn.res);
-			newReq.setRedirectCount(conn.req.getRedirectCount() + 1);
-			
-			std::cout << "******* PRINT INTERNAL REQUEST ******" << std::endl;
-			printRequest(newReq);
-
-			if (conn.req.getRedirectCount() > 10)
-				throw HttpException(508, "Loop Detected");
-			
-			std::cout << "****** INTERNAL RESOLVE ******" << std::endl;
-			internalRouter.resolve(newReq, newRes);
-			conn.res = newRes;
-
-			std::cout << "@@@@@DEBUG: CGI LOCAL REDIR" << std::endl;
-
-			break;
-		case CGI_CLIENT_REDIR:
-			processClientRedir(conn.res);
-			std::cout << "@@@@@DEBUG: CGI CLIENT REDIR" << std::endl;
-			break;
-		case CGI_CLIENT_DOC_REDIR:
-			processClientRedirWithDocument(conn.res);
-			std::cout << "@@@@@DEBUG: CGI CLIENT DOCUMENT REDIR" << std::endl;
-			break;
-		default:
-			std::cout << "@@@@@DEBUG: NONE" << std::endl;
-			break;
-	}*/
-	
-	/*std::cout << "\n*************** handlerRequest()->printEnvp() *************** " << std::endl;
-	printEnvp();
-	if(_envp)
-		freeEnvp( );*/
 }
 
 void	CgiRequestHandler::handleRequest( HttpRequest &req, HttpResponse &res ) {
-	std::cout << "IGNORE: CgiRequestHandler::handleRequest() called" << std::endl;
-
-	std::cout << "IGNORE: Request Method: " << req.getMethod() << std::endl;
-	std::cout << "IGNORE: Response BODY: " << res.getBody() << std::endl;
+	(void)req;
+	(void)res;
+	std::cout << "CgiRequestHandler::handleRequest virtual function called IGNORE" << std::endl;
 }
 
 /// @brief 

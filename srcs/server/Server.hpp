@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 21:21:10 by nogioni-          #+#    #+#             */
-/*   Updated: 2026/06/22 23:29:37 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/07/05 20:09:06 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,8 +34,8 @@ class	Server
 
 		// creates the socket on the chosen door and 
 		// ads the fd on the event loop
-		void	setup(int port);
-		void	setup( Listen target );
+		void	setup(int port, int server_idx );
+		void	setup( Listen target, int server_idx );
 
 		//starts the loop
 		void	run(globalConfig& config);

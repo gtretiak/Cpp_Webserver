@@ -7,3 +7,11 @@ const char	*HttpException::what() const throw() {
 int	HttpException::code() const {
 	return (this->code_);
 }
+/*
+/// @brief Build response based on code
+/// @param code 
+/// @param res 
+void	HttpException::errorCodeDispatcher(int code, HttpResponse& res) {
+
+}
+*/

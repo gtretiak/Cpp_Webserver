@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 09:18:39 by dopereir          #+#    #+#             */
-/*   Updated: 2026/06/03 16:29:38 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/07/14 11:28:51 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -366,7 +366,6 @@ void configParser::applyServerDirective(serverConfig& server,
 			throw parseError(formatError(line, "autoindex expects 'on' or 'off'"));
 		}
 		server._autoindex = (args[0] == "on");
-		server._has_autoindex = true;
 	}
 	else if (name == "client_max_body_size") {
 		if (args.size() != 1) {
@@ -408,6 +407,11 @@ void configParser::applyServerDirective(serverConfig& server,
 			server._has_return = true;
 		}
 	}
+	else if (name == "upload_store") {
+		if (args.size() != 1)
+			throw parseError(formatError(line, "upload_store expects a path, the field cannot be empty"));
+		server._upload_store = args[0];
+	}
 }
 
 void configParser::applyLocationDirective(locationConfig& location,
@@ -439,7 +443,6 @@ void configParser::applyLocationDirective(locationConfig& location,
 			throw parseError(formatError(line, "autoindex expects 'on' or 'off'"));
 		}
 		location._autoindex = (args[0] == "on");
-		location._has_autoindex = true;
 	}
 	else if (name == "client_max_body_size") {
 		if (args.size() != 1) {

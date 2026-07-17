@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 17:42:33 by dopereir          #+#    #+#             */
-/*   Updated: 2026/06/24 22:18:30 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/07/16 00:05:00 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -141,8 +141,7 @@ void	CgiRequestHandler::childRun( t_ctx_exec& ctx ) {
 void	CgiRequestHandler::cgiExecutor( Connection& conn ) {
 	t_ctx_exec	ctx;
 	pid_t		pid;
-	//int			status;
-	
+
 	const std::string	requestBody = conn.req.getBody();
 
 	if (!_envp) {
@@ -172,29 +171,4 @@ void	CgiRequestHandler::cgiExecutor( Connection& conn ) {
 	conn.cgiData.pollFd.fd = conn.cgiData.outFd;
 	conn.cgiData.pollFd.events = POLLIN;
 	conn.cgiData.pollFd.revents = 0;
-
-	//still need to push back the pollfd to the pollFd vector in event loop
-
-	//writeRequestBodyToCgi(conn.req, ctx.stdin_pipe);//CAUSES BLOCK
-	//close(ctx.stdin_pipe[1]);
-	
-	//CGI OUTPUT READNESS MUST BE AT EVENT LOOP
-	/*ctx.cgiOutput = readCgiOutput(ctx.stdout_pipe[0]);//CAUSE BLOCK
-	close(ctx.stdout_pipe[0]);*/
-
-	//CHILD EXIT LOGIC MUST BE AT EVENT LOOP
-	/*if (waitpid(pid, &status, 0) == -1) // <-- THIS HANGS, FIX TO NOT HANG -> waitpid(pid, WNOHANG)
-		throw HttpException(500, "waitpid failed");
-	if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
-		std::cout << "FAILED HERE"<< std::endl;
-		throw HttpException(502, "CGI execution failed");
-	}*/
-		
-
-	/*parseCgiHttpResponse(conn.res, ctx.cgiOutput);
-	std::cout << "\n*************** CGI OUTPUT *************** " << std::endl;
-	if (!ctx.cgiOutput.empty()) {
-		std::cout << ctx.cgiOutput;
-		std::cout << "**** END ****" << std::endl;
-	}*/
 }

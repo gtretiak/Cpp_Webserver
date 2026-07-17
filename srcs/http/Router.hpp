@@ -22,7 +22,7 @@ class	Router {
 		Router(globalConfig* config);
 		Router(Router &other);
 	
-		void	resolve( HttpRequest &req, HttpResponse& res );
+		int	resolve( HttpRequest &req, HttpResponse& res );
 
 		void	setConfig( globalConfig* config);
 		void	setConnEnv( Connection& conn );

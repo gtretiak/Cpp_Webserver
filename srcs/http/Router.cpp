@@ -21,7 +21,7 @@ void	Router::setConnEnv( Connection& conn ) {
 	this->CurrentConn_ = &conn;
 }
 
-void	Router::resolve( HttpRequest &req, HttpResponse &res ) {
+int	Router::resolve( HttpRequest &req, HttpResponse &res ) {
 	std::string	target = req.getUrl();
 
 	std::cout << " **** RESOLVE(): target: " << target << std::endl;
@@ -35,12 +35,14 @@ void	Router::resolve( HttpRequest &req, HttpResponse &res ) {
 		std::cout << "\n*************** printMetaVars() for current response *************** " << std::endl;
 		cgiHandler.printMetaVars();
 		
-		return ;
+		return (0);
 	}
-	// otherwise static.
-	//staticHandler.handleRequest(req, res);
-	
-	return ;
+	else {
+		std::cout << "\n ************** ENTERED STATIC REQUEST BLOCK (GET, POST DELETE)" << std::endl;
+		staticHandler.handleRequest(req, res);
+		//return flag saying is static
+	}
+	return (1);
 }
 
 Router::~Router() {}

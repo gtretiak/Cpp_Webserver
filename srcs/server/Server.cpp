@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 21:25:16 by nogioni-          #+#    #+#             */
-/*   Updated: 2026/06/22 23:30:56 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/07/05 20:09:21 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,17 +36,17 @@ Server::~Server()
 {
 }
 
-void Server::setup(int port)
+void Server::setup(int port, int server_idx)
 {
 	_socket.create(port);
-	_eventLoop->addListenFd(_socket.getFd());
+	_eventLoop->addListenFd(_socket.getFd(), server_idx);
 }
 
-void	Server::setup( Listen target ) {
+void	Server::setup( Listen target, int server_idx ) {
 	//maybe but this function to create a fd and add to the std::vector of sockets
 	//this way we can have multiple listen sockets
 	_socket.create(target);
-	_eventLoop->addListenFd(_socket.getFd());
+	_eventLoop->addListenFd(_socket.getFd(), server_idx);
 }
 
 void Server::run(globalConfig& config)

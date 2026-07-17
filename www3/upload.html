@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Upload test</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<h1>Upload test</h1>
+<p><a href="/html/index.html">&larr; back to home</a></p>
+
+<p>Sends the raw file bytes as the POST body (your server reads the body
+directly, it doesn't parse multipart/form-data). The target path must
+contain <code>/uploads</code> or the write will be rejected as Forbidden.</p>
+
+<div class="field">
+  <label>Target directory:</label>
+  <input type="text" id="uploadPath" value="/uploads">
+</div>
+<div class="field">
+  <label>File to upload:</label><br>
+  <input type="file" id="fileInput">
+</div>
+<button onclick="doUpload()">Upload</button>
+
+<h3>Result</h3>
+<pre id="uploadResult">(nothing yet)</pre>
+
+<script>
+async function doUpload() {
+  const fileInput = document.getElementById('fileInput');
+  const path = document.getElementById('uploadPath').value.trim() || '/uploads';
+  const out = document.getElementById('uploadResult');
+
+  if (!fileInput.files.length) {
+    out.textContent = 'Pick a file first.';
+    return;
+  }
+  const file = fileInput.files[0];
+  out.textContent = 'Uploading ' + file.name + ' (' + file.size + ' bytes) to ' + path + ' ...';
+
+  try {
+    const buffer = await file.arrayBuffer();
+    const res = await fetch(path, { method: 'POST', body: buffer });
+    const text = await res.text();
+    let headers = '';
+    res.headers.forEach((v, k) => { headers += k + ': ' + v + '\n'; });
+    out.textContent =
+      'Status: ' + res.status + ' ' + res.statusText + '\n\n' +
+      headers + '\n' +
+      'Body:\n' + text;
+  } catch (err) {
+    out.textContent = 'Request failed: ' + err;
+  }
+}
+</script>
+</body>
+</html>

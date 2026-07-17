@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/28 23:24:56 by dopereir          #+#    #+#             */
-/*   Updated: 2026/06/02 22:12:53 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/07/14 11:27:15 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,6 @@ locationConfig::locationConfig()
 	_alias(),
 	_index(),
 	_autoindex(false),
-	_has_autoindex(false),
 	_client_max_body_size(0),
 	_has_client_max_body_size(false),
 	_allowed_methods(),
@@ -30,7 +29,8 @@ locationConfig::locationConfig()
 	_return(),
 	_has_return(false),
 	_cgi(),
-	_has_cgi(false) {}
+	_has_cgi(false),
+	upload_store() {}
 
 locationConfig::locationConfig(const locationConfig& other)
 	: _path(other._path),
@@ -38,7 +38,6 @@ locationConfig::locationConfig(const locationConfig& other)
 	_alias(other._alias),
 	_index(other._index),
 	_autoindex(other._autoindex),
-	_has_autoindex(other._has_autoindex),
 	_client_max_body_size(other._client_max_body_size),
 	_has_client_max_body_size(other._has_client_max_body_size),
 	_allowed_methods(other._allowed_methods),
@@ -49,8 +48,8 @@ locationConfig::locationConfig(const locationConfig& other)
 	_return(other._return),
 	_has_return(other._has_return),
 	_cgi(other._cgi),
-	_has_cgi(other._has_cgi) {
-}
+	_has_cgi(other._has_cgi),
+	upload_store(other.upload_store) {}
 
 locationConfig& locationConfig::operator=(const locationConfig& other) {
 	if (this != &other) {
@@ -59,7 +58,6 @@ locationConfig& locationConfig::operator=(const locationConfig& other) {
 		_alias = other._alias;
 		_index = other._index;
 		_autoindex = other._autoindex;
-		_has_autoindex = other._has_autoindex;
 		_client_max_body_size = other._client_max_body_size;
 		_has_client_max_body_size = other._has_client_max_body_size;
 		_allowed_methods = other._allowed_methods;
@@ -71,6 +69,7 @@ locationConfig& locationConfig::operator=(const locationConfig& other) {
 		_has_return = other._has_return;
 		_cgi = other._cgi;
 		_has_cgi = other._has_cgi;
+		upload_store = other.upload_store;
 	}
 	return *this;
 }

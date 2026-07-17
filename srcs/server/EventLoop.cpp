@@ -6,13 +6,14 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 21:03:51 by nogioni-          #+#    #+#             */
-/*   Updated: 2026/07/02 23:01:12 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/07/17 22:01:20 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "EventLoop.hpp"
 #include "../http/Router.hpp"
 #include "../config/globalConfig.hpp"
+#include "../http/HttpException.hpp"
 #include "Connection.hpp"
 #include <stdexcept>
 #include <cerrno>
@@ -23,6 +24,8 @@
 #include <sys/socket.h>
 #include <sstream>
 #include <fstream>
+
+volatile sig_atomic_t	g_shutdown = 0;
 
 EventLoop::EventLoop() : _pollFds(),
 						_listenFds(),
@@ -57,7 +60,12 @@ EventLoop::~EventLoop()
 	}
 }
 
-void EventLoop::addListenFd(int fd)
+void	signalHandler(int signal) {
+	(void)signal;
+	g_shutdown = 1;
+}
+
+void EventLoop::addListenFd(int fd, int server_idx)
 {
 	struct pollfd pfd;
 
@@ -67,15 +75,21 @@ void EventLoop::addListenFd(int fd)
 
 	_pollFds.push_back(pfd);
 	_listenFds.push_back(fd);
+	_listenFdsMAP.insert(std::make_pair(fd, server_idx));
 }
 
-void EventLoop::run(globalConfig& config) //HANDLE CGI NON-BLOCKING STATES HERE?
+void EventLoop::run(globalConfig& config)
 {
 	_running = true;
 	_config = &config;
 
 	while (_running)
 	{
+		if (g_shutdown)
+		{
+			std::cout << "\nShutting down server..." << std::endl;
+			break;
+		}
 		int ready = poll(&_pollFds[0], _pollFds.size(), 1000);
 
 		if (ready == -1)
@@ -179,8 +193,10 @@ void EventLoop::acceptClient(int listenFd)
 		pfd.revents = 0;
 
 		_pollFds.push_back(pfd);
-
-		std::cout << "Client connected: fd " << clientFd << std::endl;
+		
+		int	server_idx = _listenFdsMAP[listenFd];
+		_listenFdsMAP.insert(std::make_pair(clientFd, server_idx));
+		std::cout << "Client connected: fd " << clientFd << ", server index: " << server_idx << std::endl;
 	}
 }
 
@@ -212,7 +228,7 @@ void EventLoop::readClient(int clientFd)
 			closeClient(clientFd);
 			return;
 		}
-	}
+	} //this block will read all the bytes available in the socket buffer, until it returns EAGAIN or EWOULDBLOCK, which means there are no more bytes to read at the moment
 
 	if (!conn.readBuffer.empty() && conn.writeBuffer.empty())
 	{
@@ -220,19 +236,19 @@ void EventLoop::readClient(int clientFd)
 				<< conn.readBuffer
 				<< "\n----- END REQUEST -----" << std::endl;
 
-		//conn.shouldClose = !conn.req.hasHeader("connection") || conn.req.getHeader("connection") != "keep-alive";
 		try {
 			HttpParser	parser;
+
 			parser.parseRequest(conn.readBuffer, &conn.req);
 			conn.readBuffer.clear();
 			std::cout << "\n************** printRequest() **************" << std::endl;
 			printRequest(conn.req);
 			std::cout << "\n************** printRequest() (END) **************" << std::endl;
 
-			if (conn.req.getUrl() == "/") {
+			if (conn.req.getUrl() == "/") { //VERSA0 PATH 
 				std::ostringstream	resp;
 				std::ostringstream	body;
-				std::ifstream		file("www/html/index_embed.html");
+				std::ifstream		file("www/html/index.html");
 	
 				body << file.rdbuf();
 				std::string bodyContent = body.str();
@@ -247,7 +263,7 @@ void EventLoop::readClient(int clientFd)
 				conn.writeBuffer = resp.str();
 				//this block is hardcoded for testing
 			}
-			else if (conn.req.getUrl() == "/favicon.ico") {
+			/*else if (conn.req.getUrl() == "/favicon.ico") {
 				std::ostringstream	resp;
 				std::ostringstream	body;
 				std::ifstream		file("www/html/favicon.ico", std::ios::binary);
@@ -263,7 +279,7 @@ void EventLoop::readClient(int clientFd)
 					<< bodyContent;
 				
 				conn.writeBuffer = resp.str();
-			} //THIS BLOCK IS HARD-CODED FOR TESTING, REMOVE LATER
+			} //THIS BLOCK IS HARD-CODED FOR TESTING, REMOVE LATER*/
 			else {
 				Router	router;
 				router.setConfig(_config);
@@ -271,28 +287,36 @@ void EventLoop::readClient(int clientFd)
 
 				conn.state = RUNNING;
 				
-				router.resolve(conn.req, conn.res);//RESOLVE MUST NOT BLOCK
-				_pollFds.push_back(conn.cgiData.pollFd);//register the cgi script output fd to the pollfd vector
-				_cgifdToPollfd[conn.cgiData.outFd] = clientFd;
+				// 0 for cgi 1 for static
+				if (router.resolve(conn.req, conn.res) == 0) {
+					_pollFds.push_back(conn.cgiData.pollFd);//register the cgi script output fd to the pollfd vector
+					_cgifdToPollfd[conn.cgiData.outFd] = clientFd;
 
-				//
-				std::cout << " ******** writeRequestBodyToCgi ********* " << std::endl;
-				writeRequestBodyToCgi(conn.req, conn.cgiData.inFd);
-				close(conn.cgiData.inFd);
-				conn.cgiData.inFd = -1;
+					writeRequestBodyToCgi(conn.req, conn.cgiData.inFd);
+					close(conn.cgiData.inFd);
+					conn.cgiData.inFd = -1;
+				} else {
+					size_t	bodySize = conn.res.getBody().size();
+					if (bodySize > 0) {
+						std::stringstream	ss;
 
-				//RESOLVE must fork, pipe and register pipe with poll()
-				// return immediately do not block with waitpid
-				//conn.writeBuffer = conn.res.toString();//at this point the response is already built and ready to be sent
+						ss << bodySize;
+						if (conn.res.hasHeader("Content-Length") == false)
+							conn.res.setHeader("Content-Length", ss.str());
+					}
+					conn.writeBuffer = conn.res.toString();
+				}
 			}
 			//printResponse(conn.res);
 			conn.shouldClose = !conn.req.hasHeader("connection") || conn.req.getHeader("connection") != "keep-alive";
-			
 		}
-		catch (const std::exception& e) {
+		catch (const HttpException& e) {
 			std::cout << e.what() << std::endl;
 			std::cout << "strerror: " << strerror(errno) << std::endl;
-			//build error response into conn.writeBuffet
+
+			conn.state = CLOSING;
+			handleHttpError(clientFd, e.code());
+			conn.writeBuffer = conn.res.toString();
 		}
 		//conn.shouldClose = true;
 		updateClientEvents(clientFd);
@@ -314,9 +338,9 @@ void EventLoop::writeClient(int clientFd)
 	if (sent > 0)
 	{
 		std::cout << "\n\n************** Sent " << sent << " bytes to client fd " << clientFd << std::endl;
-		std::cout << "----- DEBUG RAW RESPONSE sent to fd " << clientFd << " -----\n"
+		/*std::cout << "----- DEBUG RAW RESPONSE sent to fd " << clientFd << " -----\n"
 				<< conn.writeBuffer.c_str()
-				<< "$\n----- DEBUG END RESPONSE -----" << std::endl;
+				<< "$\n----- DEBUG END RESPONSE -----" << std::endl;*/
 		conn.writeBuffer.erase(0, sent);
 		conn.lastActivity = time(NULL);
 	}
@@ -354,6 +378,7 @@ void EventLoop::closeClient(int clientFd)
 		if (it->fd == clientFd)
 		{
 			_pollFds.erase(it);
+			_listenFdsMAP.erase(clientFd);
 			break;
 		}
 	}
@@ -378,8 +403,8 @@ void EventLoop::updateClientEvents(int clientFd)
 }
 
 void	EventLoop::continueCgi( int pipeFd ) {
-	int	clientFd = _cgifdToPollfd[pipeFd];
-	Connection &conn = _connections[clientFd];
+	int			clientFd = _cgifdToPollfd[pipeFd];
+	Connection	&conn = _connections[clientFd];
 
 	char	buf[4096];
 	ssize_t	bytesRead = read(pipeFd, buf, sizeof(buf));
@@ -387,7 +412,6 @@ void	EventLoop::continueCgi( int pipeFd ) {
 	if (bytesRead > 0) {
 		conn.cgiData.outputBuffer.append(buf, bytesRead);
 		return ;
-		//come back here if poll fires again on this pipe
 	}
 	removeFdFromPollFds(pipeFd);
 	_cgifdToPollfd.erase(pipeFd);
@@ -402,11 +426,22 @@ void	EventLoop::continueCgi( int pipeFd ) {
 	conn.cgiData.pid = -1;
 	conn.cgiData.outFd = -1;
 	waitpid(deadPid, &status, WNOHANG);
-	//conn.parseCgiHttpResponse(conn.res, conn.cgiData.outputBuffer);
 
+	try {
+		conn.setConfig(_config);
+		conn.finalizeCgi(conn);
+	}
+	catch (const HttpException& e) {
+		std::cout << e.what() << std::endl;
+		std::cout << "strerror: " << strerror(errno) << std::endl;
 
-	conn.setConfig(_config);
-	conn.finalizeCgi(conn);
+		handleHttpError(clientFd, e.code());
+		conn.state = CLOSING;
+		conn.writeBuffer = conn.res.toString();
+		updateClientEvents(clientFd);
+		return ;
+	}
+	
 
 	if (conn.state == RUNNING) {
 		_pollFds.push_back(conn.cgiData.pollFd);
@@ -416,19 +451,14 @@ void	EventLoop::continueCgi( int pipeFd ) {
 		conn.cgiData.inFd = -1;
 		return ;
 	}
-	//the problem may be here
-	//the block above is for redirection cgi case.
-	//the controls goes back to the event loop
-	// the cgi is still tunning
-	size_t bodySize = conn.res.getBody().size();
+	size_t	bodySize = conn.res.getBody().size();
 	if (bodySize > 0) {
 		std::stringstream	ss;
-		
+
 		ss << bodySize;
 		if (conn.res.hasHeader("Content-Length") == false)
 			conn.res.setHeader("Content-Length", ss.str());
 	}
-	
 	conn.writeBuffer = conn.res.toString();
 	updateClientEvents(clientFd);
 }
@@ -442,6 +472,53 @@ void	EventLoop::removeFdFromPollFds( int fd ) {
 		{
 			_pollFds.erase(it);
 			break;
+		}
+	}
+}
+
+int	EventLoop::matchConnToServerIndex( int clientFd ) {
+	std::map<int, int>::iterator	it;
+
+	it = _listenFdsMAP.find(clientFd);
+
+	/*for (std::map<int, int>::iterator jt = _listenFdsMAP.begin(); jt != _listenFdsMAP.end(); ++jt) {
+		std::cout << "EventLoop::matchConnToServerIndex(): listenFdMAP = " << jt->first << ", server index = " << jt->second << std::endl;
+	}*/
+	if (it != _listenFdsMAP.end()) {
+		return it->second;
+	}
+	return -1;
+}
+
+void	EventLoop::handleHttpError( int clientFd, int errorCode ) {
+	int			idx;
+	Connection	&conn = _connections[clientFd];
+
+	conn.res = HttpResponse();
+	idx = matchConnToServerIndex(clientFd);
+	std::cout << "EventLoop::handleHttpError(): clientFd = " << clientFd << ", errorCode = " << errorCode << ", server index = " << idx << std::endl;
+	if (idx == -1) {//possible error, because clientFd do not match any server
+		//error decide how to handle this case. maybe internal server error 500
+		std::cout << "******** Error idx = -1 *********" << std::endl;
+	}
+	if (_config->servers[idx]._error_pages.empty()) {
+		//no error pages configured use default
+		// solve default by search e.code + html in root + error pages folder
+	}
+	else {
+		std::map<int, std::string>::iterator	it;
+		
+		it = _config->servers[idx]._error_pages.find(errorCode);
+		if (it != _config->servers[idx]._error_pages.end()) {
+			//we find
+			//second argument is the path
+			std::string	filepath = _config->servers[idx]._root + it->second;
+			conn.res.setStatus(errorCode);
+			conn.res.generateErrorPageResponse(filepath.c_str());
+			
+			std::cout << "********** Error page generated from config file **********" << std::endl;
+			printResponse(conn.res);
+			std::cout << "********** Error page generated from config file (END) **********" << std::endl;
 		}
 	}
 }

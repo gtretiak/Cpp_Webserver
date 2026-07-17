@@ -87,7 +87,8 @@ void	StaticRequestHandler::handleRequest(HttpRequest &req, HttpResponse &res) {
 	if (dotPos != std::string::npos)
 		extension = path.substr(dotPos);
 	std::string	type = MimeTypes::getMimeType(extension);
-	std::string	root = "./www";
+	std::string	root = "./www"; //fetch from globalConfig or serverConfig
+	//to fetch root from location config depends on the existence of locationConfig instance and root directive available
 /*	if (loc) // to add once we have location config (and as a parameter too) TODO
 		root = loc->root;*/
 	std::string	filePath = root + path;

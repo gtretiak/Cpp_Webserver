@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 11:54:28 by dopereir          #+#    #+#             */
-/*   Updated: 2026/06/03 16:54:25 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/07/15 11:06:28 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,7 +59,6 @@ public:
 	std::string					_alias; //alias for root, not mandatory
 	std::vector<std::string>	_index;
 	bool						_autoindex;
-	bool						_has_autoindex;
 	size_t						_client_max_body_size;
 	bool						_has_client_max_body_size;
 	limitExcept					_allowed_methods; //limit_except directive
