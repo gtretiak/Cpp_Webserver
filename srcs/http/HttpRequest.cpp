@@ -1,4 +1,5 @@
 #include "HttpRequest.hpp"
+#include "HttpUtils.hpp"
 #include "HttpException.hpp"
 
 HttpRequest::HttpRequest() {
@@ -48,12 +49,6 @@ void	HttpRequest::setVersion(const std::string &v) {
 }
 void	HttpRequest::setBody(const std::string &b) {
 		this->body_ = b;
-}
-static std::string	toLower(const std::string &key) {
-	std::string     res = key;
-	for (size_t i = 0; i < res.size(); i++)
-		res[i] = std::tolower(res[i]);
-	return (res);
 }
 void	HttpRequest::setHeader(const std::string &k, const std::string &v) {
 	std::string	lowKey = toLower(k);

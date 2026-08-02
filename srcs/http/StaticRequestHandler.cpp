@@ -1,6 +1,7 @@
 #include "StaticRequestHandler.hpp"
 #include "MimeTypes.hpp"
 #include "HttpException.hpp"
+#include "HttpUtils.hpp"
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -15,7 +16,7 @@ std::string	StaticRequestHandler::readFile(const std::string &path) {
 	if (fd < 0)
 		throw HttpException(400, "File Not Found" + path);
 	std::string	content;
-	char	buf[4096];
+	char	buf[BUFFER_SIZE];
 	ssize_t	bytesRead = 1;
 	while (bytesRead > 0)
 	{
@@ -96,7 +97,7 @@ void	StaticRequestHandler::handleRequest(HttpRequest &req, HttpResponse &res) {
 		filePath = root + "/html" + path;
 	else
 		filePath = root + "/application" + path;*/
-	std::cout << "type(text/html?:[" << type << "],\npath:[" << path << "]\nfilepath:[" << filePath << "]" << std::endl;//for development purposes only; to be removed TODO
+//	std::cout << "type(text/html?:[" << type << "],\npath:[" << path << "]\nfilepath:[" << filePath << "]" << std::endl;//for development purposes only; to be removed TODO
 	res.setHeader("connection", "keep-alive");//if the connection is still open
 	res.setHeader("cache-control", "public, max-age=3600");
 	if (method == "GET")
@@ -105,9 +106,9 @@ void	StaticRequestHandler::handleRequest(HttpRequest &req, HttpResponse &res) {
 		res.setStatus(200);
 		res.setHeader("content-type", type);
 		res.setBody(content);
-		std::cout << "[GET] Served: " << filePath << std::endl;//to be removed TODO
+//		std::cout << "[GET] Served: " << filePath << std::endl;//to be removed TODO
 		std::cout << "\nRESPONSE ->\n";//cout - conn.writeBuffer equivalent TODO
-		std::cout << res.toString() << std::endl;//to test only, to be sent to writeBuffer TODO
+//		std::cout << res.toString() << std::endl;//to test only, to be sent to writeBuffer TODO
 		//system(("open " + filePath).c_str());//to test only, to be removed TODO
 	}
 	else if (method == "POST")
@@ -123,7 +124,7 @@ void	StaticRequestHandler::handleRequest(HttpRequest &req, HttpResponse &res) {
 		res.setHeader("content-type", type);
 		res.setHeader("location", "/uploads/" + getFileName(uniquePath));
 		res.setBody("");
-		std::cout << "[POST] Created: " << uniquePath << std::endl;//to be removed TODO
+//		std::cout << "[POST] Created: " << uniquePath << std::endl;//to be removed TODO
 	}
 	else if (method == "DELETE")
 	{
@@ -134,7 +135,7 @@ void	StaticRequestHandler::handleRequest(HttpRequest &req, HttpResponse &res) {
 		deleteFile(filePath);
 		res.setStatus(204);
 		res.setBody("");
-		std::cout << "[DELETE] Removed: " << filePath << std::endl;//to be removed TODO
+//		std::cout << "[DELETE] Removed: " << filePath << std::endl;//to be removed TODO
 	}
 //	res.setHeader("set-cookie", "sessionId=abc123; Max-Age=3600");// should be moved from here
 }

@@ -30,7 +30,7 @@ const std::string	StatusCodes::getStatus(int code) {
 		case 502: return "Bad Gateway";//CGI returned invalid response
 		case 503: return "Service Unavailable";//server maintenance/overload  TODO
 		case 504: return "Gateway Timeout";//CGI didn't respond in time
-		case 505: return "HTTP Version Not Supported";//TODO
+		case 505: return "HTTP Version Not Supported";
 		//Look for more to implement TODO
 		default: return "Unknown";
 	}

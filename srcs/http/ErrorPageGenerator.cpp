@@ -1,4 +1,5 @@
 #include "ErrorPageGenerator.hpp"
+#include "HttpUtils.hpp"
 #include "StatusCodes.hpp"
 #include <sstream>
 #include <fcntl.h>
@@ -8,7 +9,7 @@ static std::string	tryRead(const std::string &filepath) {
 	int	fd = open(filepath.c_str(), O_RDONLY);
 	if (fd < 0)
 		return "";
-	char	buf[4096];
+	char	buf[BUFFER_SIZE];
 	std::string	content;
 	ssize_t	bytesRead = 1;
 	while (bytesRead > 0)
