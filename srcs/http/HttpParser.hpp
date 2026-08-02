@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/27 10:42:32 by gtretiak          #+#    #+#             */
-/*   Updated: 2026/06/21 18:25:31 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/02 14:00:35 by gtretiak         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,7 @@
 
 #include <string>
 
-struct	Connection;
+class	Connection;
 class	HttpRequest;
 
 class	HttpParser {
