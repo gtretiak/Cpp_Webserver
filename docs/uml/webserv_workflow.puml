@@ -38,7 +38,7 @@ partition "event loop" {
       if (socket readable?) then (read)
         :readClient();
         :HttpParser::parseRequest();
-        if (request target is /cgi-bin?) then (cgi)
+        if (request target is /cgi-bin?) then (cgi) /' CGI depends not on /cgi-bin, but on config, meaning is Route resolved as CGI or is location conigured for CGI? '/
           :Router::resolve();
           :CgiRequestHandler::handleRequest(Connection&);
           :extract meta vars;
