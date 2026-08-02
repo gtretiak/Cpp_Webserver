@@ -47,6 +47,7 @@ package "entry points" {
 RequestHandler <|-- StaticRequestHandler
 RequestHandler <|-- CgiRequestHandler
 CgiRequestHandler <|-- Connection
+'/ Inheritance? '/
 
 configParser ..> globalConfig : parse()
 configParser ..> serverConfig : build
