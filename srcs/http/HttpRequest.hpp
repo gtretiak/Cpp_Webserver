@@ -13,10 +13,14 @@ class	HttpRequest {
 		std::string	query_;
 		std::string	version_;
 		std::string	body_;
+		int			redirectCount_;
 		std::map<std::string, std::string>	headers_;
 		bool	isKeepAlive() const;
 	public:
 		HttpRequest();
+		HttpRequest( const HttpRequest& other );
+		HttpRequest &operator=(const HttpRequest& other);
+
 		void	setMethod(const std::string &m);
 		void	setUrl(const std::string &u);
 		void	setPath(const std::string &p);
@@ -33,6 +37,10 @@ class	HttpRequest {
 		bool	hasHeader(const std::string &key) const;
 		std::string	getHeader(const std::string &key) const;
 		const std::map<std::string, std::string> &getHeaders() const;
+		void	incrementRedirectCount();
+		int		getRedirectCount( ) const;
+		void	setRedirectCount( int value );
+
 		~HttpRequest();
 };
 

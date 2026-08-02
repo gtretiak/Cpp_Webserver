@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/21 23:20:08 by dopereir          #+#    #+#             */
-/*   Updated: 2026/06/05 17:13:57 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/07/14 11:25:36 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,10 +19,9 @@ public:
 	std::vector<Listen>			_listens;
 	std::vector<std::string>	_server_names;
 	std::string					_root;
-	std::string					_alias; //not mandatory, i guess
-	std::vector<std::string>	_index;
+	std::string					_alias; //not mandatory
+	std::vector<std::string>	_index;			// when the request file is a directory serve this file.
 	bool						_autoindex;
-	bool						_has_autoindex;
 	size_t						_client_max_body_size;
 	bool						_has_client_max_body_size;
 	limitExcept					_allowed_methods;
@@ -30,8 +29,9 @@ public:
 	std::map<int, std::string>	_error_pages;
 	std::vector<locationConfig>	_locations;
 	std::vector<directiveValue>	_directives;
-	std::map<int, std::string>	_return;
+	std::map<int, std::string>	_return;	//allows direct status code with text or no text, and redirection with status code and url
 	bool						_has_return;
+	std::string					_upload_store;
 
 	serverConfig();
 	serverConfig(const serverConfig& other);

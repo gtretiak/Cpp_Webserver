@@ -6,13 +6,14 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 17:42:33 by dopereir          #+#    #+#             */
-/*   Updated: 2026/06/10 17:53:32 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/07/16 00:05:00 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "CgiRequestHandler.hpp"
 #include "../http/MimeTypes.hpp"
 #include "../http/HttpException.hpp"
+#include "../server/Connection.hpp"
 
 /// @brief To be use only in execution context, it gets the root repository
 /// @brief derived from location block or server block setting
@@ -62,7 +63,7 @@ std::string CgiRequestHandler::getExecScriptName( std::string& scriptPath ) {
 	return scriptName;
 }
 
-void	CgiRequestHandler::writeRequestBodyToCgi( HttpRequest& req, int stdin_pipe[2] ) {
+/*void	writeRequestBodyToCgi( HttpRequest& req, int stdin_pipe[2] ) {
 	const std::string	requestBody = req.getBody();
 	size_t				written;
 
@@ -76,7 +77,7 @@ void	CgiRequestHandler::writeRequestBodyToCgi( HttpRequest& req, int stdin_pipe[
 			written += static_cast<size_t>(chunk);
 		}
 	}
-}
+}*/
 
 std::string	CgiRequestHandler::readCgiOutput( int stdout_pipe ) {
 	std::string	cgiOutput;
@@ -137,17 +138,16 @@ void	CgiRequestHandler::childRun( t_ctx_exec& ctx ) {
 }
 
 
-void	CgiRequestHandler::cgiExecutor( HttpRequest& req, HttpResponse& res ) {
+void	CgiRequestHandler::cgiExecutor( Connection& conn ) {
 	t_ctx_exec	ctx;
 	pid_t		pid;
-	int			status;
-	
-	const std::string	requestBody = req.getBody();
+
+	const std::string	requestBody = conn.req.getBody();
 
 	if (!_envp) {
 		throw HttpException(500, "Internal Error envp not valid");
 	}
-	setExecContext(ctx, req);
+	setExecContext(ctx, conn.req);
 	pid = fork();
 	if (pid == -1) {
 		close(ctx.stdin_pipe[0]);
@@ -159,22 +159,16 @@ void	CgiRequestHandler::cgiExecutor( HttpRequest& req, HttpResponse& res ) {
 	if (pid == 0) {
 		childRun(ctx);
 	}
+
 	close(ctx.stdin_pipe[0]);
 	close(ctx.stdout_pipe[1]);
 
-	writeRequestBodyToCgi(req, ctx.stdin_pipe);
-	close(ctx.stdin_pipe[1]);
-	
-	ctx.cgiOutput = readCgiOutput(ctx.stdout_pipe[0]);
-	close(ctx.stdout_pipe[0]);
+	conn.cgiData.pid = pid;
+	conn.cgiData.inFd = ctx.stdin_pipe[1];
+	conn.cgiData.outFd = ctx.stdout_pipe[0];
+	conn.cgiData.cgiLastActivity = time(NULL) + 10;
 
-	if (waitpid(pid, &status, 0) == -1)
-		throw HttpException(500, "waitpid failed");
-	if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
-		throw HttpException(502, "CGI execution failed");
-
-	parseCgiHttpResponse(res, ctx.cgiOutput);
-	std::cout << "\n*************** CGI OUTPUT *************** " << std::endl;
-	if (!ctx.cgiOutput.empty())
-		std::cout << ctx.cgiOutput;
+	conn.cgiData.pollFd.fd = conn.cgiData.outFd;
+	conn.cgiData.pollFd.events = POLLIN;
+	conn.cgiData.pollFd.revents = 0;
 }

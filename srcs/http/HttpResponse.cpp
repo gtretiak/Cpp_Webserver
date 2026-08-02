@@ -31,6 +31,20 @@ HttpResponse::HttpResponse(const std::string &serverName) : version_("HTTP/1.1")
 	//this->setHeader("server", serverName_);
 }
 
+HttpResponse&	HttpResponse::operator=(const HttpResponse &other) {
+	if (this != &other) {
+		version_ = other.version_;
+		serverName_ = other.serverName_;
+		statusCode_ = other.statusCode_;
+		statusText_ = other.statusText_;
+		body_ = other.body_;
+		date_ = other.date_;
+		headers_ = other.headers_;
+		has_status_ = other.has_status_;
+	}
+	return *this;
+}
+
 std::string	HttpResponse::toString() const {
 	std::ostringstream	ss;
 
@@ -43,6 +57,7 @@ std::string	HttpResponse::toString() const {
 	}
 	ss << "\r\n";
 	if (!this->body_.empty())
+	{
 		ss << this->body_;
 	return (ss.str());
 }
@@ -131,3 +146,22 @@ bool	HttpResponse::hasHeader(const std::string &k) const {
 }
 
 HttpResponse::~HttpResponse() {}
+
+void	HttpResponse::generateErrorPageResponse( const char *filepath ) {
+	char	*buffer = new char[4096];
+	int		fd = open(filepath, O_RDONLY);
+
+	std::cout << "****** debug: generateErrorPageResponse: filepath = " << filepath << std::endl;
+	while (read(fd, buffer, sizeof(buffer) - 1) != 0) {
+		buffer[sizeof(buffer) - 1] = '\0';
+		this->body_ += buffer;
+	}
+	std::cout << "****** debug: generateErrorPageResponse: body = " << this->body_ << std::endl;
+	std::ostringstream	ss;
+	ss << this->body_.length();
+	this->setVersion("HTTP/1.1");
+	this->setHeader("Content-Length", ss.str());
+	this->setHeader("Content-Type", "text/html");
+	delete[] buffer;
+	close(fd);
+}

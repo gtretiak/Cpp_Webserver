@@ -6,13 +6,15 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/09 18:19:23 by dopereir          #+#    #+#             */
-/*   Updated: 2026/06/11 00:51:42 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/07/16 00:11:20 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "CgiRequestHandler.hpp"
 #include "../http/MimeTypes.hpp"
 #include "../http/HttpException.hpp"
+#include "../http/Router.hpp"
+#include "../server/Connection.hpp"
 
 static std::string	toLowerString( std::string value ) {
 	for (std::string::size_type i = 0; i < value.size(); ++i)
@@ -54,13 +56,19 @@ CgiRequestHandler::CgiRequestHandler() {
 	_envp = NULL;
 }
 
-CgiRequestHandler::CgiRequestHandler( const globalConfig* config)
+CgiRequestHandler::CgiRequestHandler( globalConfig* config)
 	: _globalConfig(config), _serverSetting(NULL), _locSetting(NULL), _envp(NULL) {}
 
-CgiRequestHandler::~CgiRequestHandler() {}
+CgiRequestHandler::~CgiRequestHandler() {
+	freeEnvp();
+}
 
 void	CgiRequestHandler::setMetaVar( std::string& key, std::string& value ) {
 	_meta_vars.insert(std::pair<std::string, std::string>(key, value));
+}
+
+void	CgiRequestHandler::setConfig( globalConfig* config ) {
+	_globalConfig = config;
 }
 
 std::string	CgiRequestHandler::getMetaVar( std::string& key ) const {
@@ -89,7 +97,6 @@ void	CgiRequestHandler::extractHeader( std::string line, size_t colon, HttpRespo
 	key = toLowerString(line.substr(0, colon));
 	value = line.substr(colon + 1);
 
-	//std::cout << "DEBUG: AT EXTRACT HEADER: key: " << key << std::endl;
 	while(!value.empty() && value[0] == ' ')
 		value.erase(0, 1);
 	if (key == "status") {
@@ -107,13 +114,11 @@ void	CgiRequestHandler::extractHeader( std::string line, size_t colon, HttpRespo
 	}
 	else if (key == "location") {
 		if (!res.hasHeader("status") && res.hasStatusCode() == false) {
-			//res.setHeader("status", std::string("302"));//IN DOCUMENT RESPONSE CAN CAUSE A MISMATCH IN STATUSCODE AND STATUS HEADER CODE
 			res.setStatus(302);
 		}
 		if (!res.hasHeader("location")) {
 			res.setHeader("location", value);
 		}
-			
 	}
 	else if (key == "content-length") {
 		int	len = std::atoi(value.c_str());
@@ -127,12 +132,6 @@ void	CgiRequestHandler::extractHeader( std::string line, size_t colon, HttpRespo
 			key == "pragma" || key == "content-language") {
 		res.setHeader(key, value);
 	}
-	//still need date, server, connection and trasnfer-encoding
-
-	//comment this line because need further cgi response classification to handle redirects
-	/*if (!res.hasHeader("content-type"))
-		throw HttpException(502, "Bad Gateway: CGI response missing content-type header");
-	*/
 }
 
 void	CgiRequestHandler::parseHeaderSection( std::string& headerSection, HttpResponse& res ) {
@@ -176,37 +175,90 @@ void	CgiRequestHandler::parseCgiHttpResponse( HttpResponse &res, std::string &cg
 		if (location != std::string::npos)
 			res.setStatusBool(true);
 	}
-	
 	parseHeaderSection(headerSection, res);
-	if (body.size() > 0) //issue when the resquest is of type CGI_DOCUMENT
-		res.setBody(body);//SETS content-lenght automatically ISSUE!
+	if (body.size() > 0)
+		res.setBody(body);
 }
 
-void	CgiRequestHandler::handleRequest(HttpRequest &req, HttpResponse &res) {
+void	CgiRequestHandler::handleRequest(Connection& conn) {
+	extractMetaVars( conn.req );
+	cgiExecutor(conn); //still need to handle timeout throw 504
+}
+
+void	CgiRequestHandler::handleRequest( HttpRequest &req, HttpResponse &res ) {
+	(void)req;
+	(void)res;
+	std::cout << "CgiRequestHandler::handleRequest virtual function called IGNORE" << std::endl;
+}
+
+/// @brief 
+/// @param conn 
+void	CgiRequestHandler::finalizeCgi(Connection& conn) {
 	cgiResponseType	type;
+	HttpResponse	newRes;
+	HttpRequest		newReq;
 
-	extractMetaVars( req );
-	cgiExecutor(req, res); //still need to handle timeout throw 504
-
-	type = classifyCgiResponse(res);
+	parseCgiHttpResponse(conn.res, conn.cgiData.outputBuffer);
+	type = classifyCgiResponse(conn.res);
 	switch(type) {
 		case CGI_DOCUMENT:
-			std::cout << "@@@@@DEBUG: CGI DOCUMENT" << std::endl;
+			std::cout << "@@@@@@@@ DEBUG: CGI DOCUMENT" << std::endl;
+			conn.state = WRITING;
 			break;
 		case CGI_LOCAL_REDIR:
-			std::cout << "@@@@@DEBUG: CGI LOCAL REDIR" << std::endl;
+			newReq = processLocalRedir(conn.res);
+			newReq.setRedirectCount(conn.req.getRedirectCount() + 1);
+			
+			std::cout << "******* PRINT INTERNAL REQUEST ******" << std::endl;
+			printRequest(newReq);
+
+			if (conn.req.getRedirectCount() > 10)
+				throw HttpException(508, "Loop Detected");
+
+			if (newReq.getUrl().find("/cgi-bin") != std::string::npos) {
+				conn.req = newReq;
+				conn.res = HttpResponse();//maybe issue is here
+				conn.cgiData.outputBuffer.clear();
+				extractMetaVars(conn.req);
+				cgiExecutor(conn);
+				//need to push back fds into pollfds and cgifdToPollfd
+				conn.state = RUNNING;
+				std::cout << "@@@@@@@@ DEBUG: CGI LOCAL REDIR -> CGI" << std::endl;
+			} else {
+				Router	tmpRouter;
+				tmpRouter.setConfig(_globalConfig);
+				tmpRouter.setConnEnv(conn);
+				tmpRouter.resolve(newReq, conn.res);
+				//need to push back fds
+				conn.state = WRITING;
+				std::cout << "@@@@@@@@ DEBUG: CGI LOCAL REDIR -> STATIC" << std::endl;
+			}
+			std::cout << "@@@@@@@@ DEBUG: CGI LOCAL REDIR (END)" << std::endl;
+
 			break;
 		case CGI_CLIENT_REDIR:
-			std::cout << "@@@@@DEBUG: CGI CLIENT REDIR" << std::endl;
+			processClientRedir(conn.res);
+			conn.state = WRITING;
+			std::cout << "@@@@@@@@ DEBUG: CGI CLIENT REDIR" << std::endl;
 			break;
 		case CGI_CLIENT_DOC_REDIR:
-			std::cout << "@@@@@DEBUG: CGI CLIENT DOCUMENT REDIR" << std::endl;
+			processClientRedirWithDocument(conn.res);
+			conn.state = WRITING;
+			std::cout << "@@@@@@@@ DEBUG: CGI CLIENT DOCUMENT REDIR" << std::endl;
 			break;
 		default:
-			std::cout << "@@@@@DEBUG: NONE" << std::endl;
+			std::cout << "@@@@@@@@ DEBUG: NONE" << std::endl;
+			throw HttpException(502, "Bad Gateway: Invalid CGI output no type match");
 			break;
 	}
 	
-	if(_envp)
-		freeEnvp( );
+	if (conn.state != RUNNING) {
+		if (_envp)
+			freeEnvp();
+		_envp = NULL;
+		conn.cgiData.pid = -1;
+		conn.cgiData.inFd = -1;
+		conn.cgiData.outFd = -1;
+		conn.cgiData.cgiLastActivity = 0;
+	}
 }

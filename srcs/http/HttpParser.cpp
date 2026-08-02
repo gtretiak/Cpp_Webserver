@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   HttpParser.cpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: gtretiak <marvin@42.fr>                    +#+  +:+       +#+        */
+/*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/27 10:42:25 by gtretiak          #+#    #+#             */
-/*   Updated: 2026/06/11 12:31:09 by gtretiak         ###   ########.fr       */
+/*   Updated: 2026/07/02 22:00:35 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,8 @@ static const size_t	MAX_HEADER_SIZE = 8192;
 static const size_t	MAX_BODY_SIZE = 8192;//to be fetch from config; to be removed TODO
 
 HttpParser::HttpParser() {}
+
+
 
 static std::string	normalize(const std::string &url) {
 	std::string	res = "/";
@@ -234,17 +236,22 @@ void	HttpParser::parseBody(std::string &buf, HttpRequest *req) {
 }
 
 size_t	HttpParser::parseRequest(std::string &buf, HttpRequest *req) {
-	size_t	size = 0;
+	std::string	header;
+	size_t		size;
+	size_t		i;
+	size_t		j;
+
+	size = 0;
 	*req = HttpRequest();
-	size_t	i = buf.find("\r\n");
+	i = buf.find("\r\n");
 	if (i == std::string::npos)
 		throw HttpException(400, "Bad Request");
 	parseLine(buf.substr(0, i), req);
-	size_t	j = buf.find("\r\n\r\n");
+	j = buf.find("\r\n\r\n");
 	if (j == std::string::npos)
 		throw HttpException(400, "Bad Request");
 	size = j + 4;
-	std::string	header = buf.substr(i + 2, j - (i + 2));
+	header = buf.substr(i + 2, j - (i + 2));
 	parseHeaders(header, req);
 	if (req->hasHeader("content-length"))
 	{

@@ -6,17 +6,20 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 00:35:52 by dopereir          #+#    #+#             */
-/*   Updated: 2026/06/11 00:43:43 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/06/21 20:28:12 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef GLOBALCONFIG_HPP
 # define GLOBALCONFIG_HPP
 # include "serverConfig.hpp"
+# include "../server/Server.hpp"
 # define CLIENT_MAX_BODY_SIZE 1048576
 
 struct	globalConfig {
 	std::vector<serverConfig>	servers;
+
+	void	initServerRoutine(Server& webserv, std::vector<serverConfig>& servers);
 
 	void	printData() const;
 	void	printLocations(const locationConfig& location) const;

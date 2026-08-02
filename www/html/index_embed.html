@@ -1,0 +1,87 @@
+<!-- index_embed.html -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>CGI Test Index Embed</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>body{font-family:Arial,Helvetica,sans-serif;padding:20px} pre{background:#f6f8fa;padding:10px;border-radius:6px}</style>
+</head>
+<body>
+  <h1>CGI Test Index Embed</h1>
+  <p>Fetch the CGI output and embed it inside this page. Inline scripts in the CGI output will be executed.</p>
+
+  <input id="cgiPath" type="text" value="/cgi-bin/py_script.py" style="width:60%;padding:.25rem;margin-right:.5rem">
+  <button id="runCgi">Fetch and Embed CGI</button>
+  <div id="status" style="margin-top:.5rem;color:#666">Ready</div>
+
+  <h2>CGI Output</h2>
+  <div id="container" style="border:1px solid #ddd;padding:12px;border-radius:6px;min-height:80px">No request yet</div>
+
+  <script>
+	// Insert HTML into container and execute scripts found in the returned HTML
+	function insertHtmlAndRunScripts(container, html, baseUrl) {
+	  // Create a temporary element to parse the HTML
+	  const tmp = document.createElement('div');
+	  tmp.innerHTML = html;
+
+	  // Extract and remove script elements so we can execute them in order
+	  const scripts = [];
+	  tmp.querySelectorAll('script').forEach(s => {
+		const scriptInfo = { src: s.src || null, text: s.textContent || '' };
+		scripts.push(scriptInfo);
+		s.parentNode.removeChild(s);
+	  });
+
+	  // Insert the remaining HTML into the container
+	  container.innerHTML = '';
+	  // If the CGI returned relative URLs, set a base element so they resolve correctly
+	  if (baseUrl) {
+		const base = document.createElement('base');
+		base.href = baseUrl;
+		container.appendChild(base);
+	  }
+	  // Move parsed nodes into container
+	  while (tmp.firstChild) container.appendChild(tmp.firstChild);
+
+	  // Execute scripts sequentially
+	  scripts.reduce((prev, s) => {
+		return prev.then(() => new Promise((resolve, reject) => {
+		  const el = document.createElement('script');
+		  if (s.src) {
+			el.src = s.src;
+			el.onload = resolve;
+			el.onerror = resolve;
+			document.head.appendChild(el);
+		  } else {
+			try {
+			  el.text = s.text;
+			  document.head.appendChild(el);
+			  resolve();
+			} catch (e) { resolve(); }
+		  }
+		}));
+	  }, Promise.resolve());
+	}
+
+	async function fetchAndEmbed() {
+	  const status = document.getElementById('status');
+	  const container = document.getElementById('container');
+	  const path = document.getElementById('cgiPath').value.trim() || '/cgi-bin/hello.cgi';
+	  status.textContent = 'Requesting ' + path + ' ...';
+	  try {
+		const resp = await fetch(path, { credentials: 'same-origin' });
+		status.textContent = `HTTP ${resp.status} ${resp.statusText}`;
+		const html = await resp.text();
+		// Use the request path as base so relative links in the CGI output resolve correctly
+		insertHtmlAndRunScripts(container, html, path);
+	  } catch (err) {
+		status.textContent = 'Fetch error: ' + err;
+		container.textContent = String(err);
+	  }
+	}
+
+	document.getElementById('runCgi').addEventListener('click', fetchAndEmbed);
+  </script>
+</body>
+</html>

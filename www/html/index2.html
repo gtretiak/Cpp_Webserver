@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>CGI Test Index</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+	body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial; padding: 2rem; line-height: 1.4; }
+	button { padding: .5rem 1rem; font-size: 1rem; cursor: pointer; }
+	pre { background:#f6f8fa; padding:1rem; border-radius:6px; white-space:pre-wrap; max-width: 90ch; }
+	.status { margin-top:.5rem; color:#666; font-size:.9rem; }
+  </style>
+</head>
+<body>
+  <h1>Webserv CGI Test Page</h1>
+  <p>Click the button to call the CGI script and display its raw output below.</p>
+
+  <div>
+	<label for="cgiPath"><strong>CGI path</strong></label>
+	<input id="cgiPath" type="text" value="/cgi-bin/py_script.py" style="width:60%; padding:.25rem; margin-right:.5rem" />
+	<button id="runCgi">Run CGI</button>
+  </div>
+
+  <div class="status" id="status">Ready</div>
+
+  <h2>CGI Response</h2>
+  <pre id="output">No request yet</pre>
+
+  <script>
+	// Default path is editable in the input above
+	const pathInput = document.getElementById('cgiPath');
+	const out = document.getElementById('output');
+	const status = document.getElementById('status');
+	const btn = document.getElementById('runCgi');
+
+	async function callCgi(method = 'GET', query = '') {
+	  const cgiPath = pathInput.value.trim() || '/cgi-bin/hello.cgi';
+	  const url = query ? (cgiPath + '?' + query) : cgiPath;
+	  status.textContent = 'Requesting ' + url + ' ...';
+	  out.textContent = '';
+
+	  try {
+		const resp = await fetch(url, {
+		  method: method,
+		  credentials: 'same-origin',
+		  headers: { 'Accept': 'text/html, text/plain, */*' }
+		});
+
+		status.textContent = `HTTP ${resp.status} ${resp.statusText}`;
+		const text = await resp.text();
+		out.textContent = text;
+	  } catch (err) {
+		status.textContent = 'Fetch error';
+		out.textContent = String(err);
+	  }
+	}
+
+	btn.addEventListener('click', () => callCgi('GET'));
+	// Example: callCgi('GET', 'name=alice') to send query string
+  </script>
+</body>
+</html>

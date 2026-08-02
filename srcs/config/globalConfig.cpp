@@ -6,13 +6,32 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 18:13:28 by dopereir          #+#    #+#             */
-/*   Updated: 2026/06/03 16:29:47 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/07/05 20:12:13 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "globalConfig.hpp"
 #include <iostream>
 #include <sstream>
+
+/// @brief this function intend to setup the listening ports and more necessary
+/// @brief directives, from config the main process.
+/// @param webserv maybe a singleton here.
+void	globalConfig::initServerRoutine(Server& webserv,
+			std::vector<serverConfig>& servers) {
+	size_t	server_idx = 0;
+	std::vector<serverConfig>::iterator	it = servers.begin();
+	
+	for (; it != servers.end(); it++) {
+		for (size_t	i = 0; i < it->_listens.size(); i++) {
+			std::cout << "Setting up listen[" << i << "]"
+			<< "for server nº " << server_idx
+			<< std::endl;
+			webserv.setup(it->_listens[i], server_idx);
+		}
+		server_idx++;
+	}
+}
 
 void	globalConfig::printData() const
 {

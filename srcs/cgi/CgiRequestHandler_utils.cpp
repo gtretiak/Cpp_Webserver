@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 17:45:18 by dopereir          #+#    #+#             */
-/*   Updated: 2026/06/11 12:03:58 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/06/12 23:16:45 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,9 +18,9 @@ void	CgiRequestHandler::freeEnvp( ) {
 	if (!_envp)
 		return ;
 	for (int i = 0; _envp[i]; ++i) {
-		free(_envp[i]);
+		delete[](_envp[i]);
 	}
-	_envp = NULL;
+	delete[](_envp);
 	return ;
 }
 
@@ -89,8 +89,8 @@ void	printResponse( HttpResponse& res ) {
 void	buildRequest(HttpRequest& req) {
 	req.setMethod("POST");
 	//req.setUrl("/cgi-bin/py_script.py/api/v1/list?limit=10");
-	req.setUrl("/cgi-bin/local_redirect_script.py");
-	req.setPath("/cgi-bin/local_redirect_script.py");
+	req.setUrl("/cgi-bin/client_redirect_with_document.py");
+	req.setPath("/cgi-bin/client_redirect_with_document.py");
 	//req.setPath("/cgi-bin/py_script.py");
 	req.setQuery("foo=bar&mode=demo");
 	req.setVersion("HTTP/1.1");

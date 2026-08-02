@@ -2,23 +2,31 @@
 #define ROUTER_HPP
 #include "RequestHandler.hpp"
 #include "StaticRequestHandler.hpp"
+#include "../config/globalConfig.hpp"
 #include "../cgi/CgiRequestHandler.hpp"
+#include "../server/Connection.hpp"
 #include "HttpRequest.hpp"
 #include "../config/globalConfig.hpp"
 
+class	CgiRequestHandler;
+
 class	Router {
 	private:
-		globalConfig	config_;
+		globalConfig*			config_;
 		StaticRequestHandler	staticHandler;
-		CgiRequestHandler	cgiHandler;
+		CgiRequestHandler		cgiHandler;
+		Connection*				CurrentConn_;
+
+		Router	&operator=(const Router &other);//do not use
 	public:
-		Router(const globalConfig &config);
-		Router(const Router &An);
-		Router	&operator=(const Router &An);
-		RequestHandler	&resolve(const HttpRequest &req);//or route with req and res TODO
-		//examine request
-		//decide on type
-		//routing to it
+		Router( );
+		Router(globalConfig* config);
+		Router(Router &other);
+	
+		int	resolve( HttpRequest &req, HttpResponse& res );
+
+		void	setConfig( globalConfig* config);
+		void	setConnEnv( Connection& conn );
 		~Router();
 };
 

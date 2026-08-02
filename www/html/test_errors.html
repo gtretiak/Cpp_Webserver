@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Webserv Error Page Tester</title>
+<style>
+    body { font-family: Arial, sans-serif; background:#222; color:#eee; padding:20px; }
+    button { margin:8px 0; padding:10px 15px; font-size:16px; cursor:pointer; }
+    pre { background:#111; padding:10px; border-radius:5px; }
+</style>
+</head>
+<body>
+
+<h1>Webserv Error Page Tester</h1>
+<p>Each button triggers a real HTTP error from your server.</p>
+
+<div id="output"><pre>Click a test button…</pre></div>
+
+<script>
+async function test(url, options = {}) {
+    try {
+        const res = await fetch(url, options);
+        const text = await res.text();
+        document.getElementById("output").innerHTML =
+            `<pre>Status: ${res.status} ${res.statusText}\n\n${text}</pre>`;
+    } catch (err) {
+        document.getElementById("output").innerHTML =
+            `<pre>Fetch error: ${err}</pre>`;
+    }
+}
+</script>
+
+<h2>Client Error Tests (4xx)</h2>
+
+<button onclick="test('/nonexistent')">404 – Not Found</button>
+<button onclick="test('/forbidden')">403 – Forbidden</button>
+<button onclick="test('/method', { method: 'PUT' })">405 – Method Not Allowed</button>
+<button onclick="test('/bigbody', { method:'POST', body:'X'.repeat(9999999) })">
+    413 – Payload Too Large
+</button>
+
+<h2>Server Error Tests (5xx)</h2>
+
+<button onclick="test('/cgi-crash')">500 – Internal Server Error</button>
+<button onclick="test('/not-implemented')">501 – Not Implemented</button>
+<button onclick="test('/bad-gateway')">502 – Bad Gateway</button>
+<button onclick="test('/service-down')">503 – Service Unavailable</button>
+<button onclick="test('/gateway-timeout')">504 – Gateway Timeout</button>
+
+<h2>Other</h2>
+
+<button onclick="test('/slow-request')">408 – Request Timeout</button>
+<button onclick="test('/too-many')">429 – Too Many Requests</button>
+
+</body>
+</html>
