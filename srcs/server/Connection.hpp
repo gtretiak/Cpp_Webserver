@@ -60,7 +60,7 @@ class	Connection : public CgiRequestHandler {
 	bool		shouldClose;	// marks connection to close after writing
 	time_t		lastActivity;	// used later to timeout
 
-	HttpRequest		req;
+	HttpRequest	req;
 	HttpResponse	res;
 
 	ConnectionState	state;		// current state of the connection
