@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   EventLoop.hpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: nogioni- <nogioni-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 21:03:53 by nogioni-          #+#    #+#             */
-/*   Updated: 2026/07/13 11:05:16 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/07/21 15:31:12 by nogioni-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@
 #include <vector>
 #include <map>
 #include <poll.h>
+#include <signal.h>
 
 extern volatile sig_atomic_t	g_shutdown;
 
@@ -25,6 +26,7 @@ void	signalHandler(int signal);
 
 struct	globalConfig;
 class	Connection;
+class Router;
 
 class	EventLoop
 {

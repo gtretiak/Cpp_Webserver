@@ -13,7 +13,7 @@ StaticRequestHandler::StaticRequestHandler(){}
 std::string	StaticRequestHandler::readFile(const std::string &path) {
 	int	fd = open(path.c_str(), O_RDONLY);
 	if (fd < 0)
-		throw HttpException(400, "File Not Found" + path);
+		throw HttpException(404, "File Not Found" + path);
 	std::string	content;
 	char	buf[4096];
 	ssize_t	bytesRead = 1;

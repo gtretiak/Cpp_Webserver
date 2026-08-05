@@ -59,6 +59,7 @@ std::string	HttpResponse::toString() const {
 	if (!this->body_.empty())
 	{
 		ss << this->body_;
+	}
 	return (ss.str());
 }
 void	HttpResponse::setVersion(const std::string &v) {
@@ -129,8 +130,8 @@ const std::map<std::string, std::string>&	HttpResponse::getHeaders( ) const {
 }
 
 const std::string	HttpResponse::getVersion( ) const {
-	if (!version_.empty())
-		return "";
+	/*if (!version_.empty())
+		return "";*/
 	return version_;
 }
 
@@ -148,9 +149,31 @@ bool	HttpResponse::hasHeader(const std::string &k) const {
 HttpResponse::~HttpResponse() {}
 
 void	HttpResponse::generateErrorPageResponse( const char *filepath ) {
-	char	*buffer = new char[4096];
+	// char	*buffer = new char[4096];
+	char buffer[4096];
 	int		fd = open(filepath, O_RDONLY);
+	// [nay added]
+	ssize_t bytesRead;
 
+	this->body_.clear();
+	if (fd < 0)
+		throw HttpException(500, "Could not open error page");
+
+	while ((bytesRead = read(fd, buffer, sizeof(buffer))) > 0)
+		this->body_.append(buffer, bytesRead);
+	close(fd);
+	if (bytesRead < 0)
+		throw HttpException(500, "Could not read error page");
+
+	std::ostringstream ss;
+	ss << this->body_.length();
+	this->setVersion("HTTP/1.1");
+	if (!this->hasHeader("content-length"))
+		this->setHeader("Content-Length", ss.str());
+	if (!this->hasHeader("content-type"))
+		this->setHeader("Content-Type", "text/html");
+}
+/*
 	std::cout << "****** debug: generateErrorPageResponse: filepath = " << filepath << std::endl;
 	while (read(fd, buffer, sizeof(buffer) - 1) != 0) {
 		buffer[sizeof(buffer) - 1] = '\0';
@@ -164,4 +187,5 @@ void	HttpResponse::generateErrorPageResponse( const char *filepath ) {
 	this->setHeader("Content-Type", "text/html");
 	delete[] buffer;
 	close(fd);
-}
+*/
+

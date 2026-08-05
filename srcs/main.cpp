@@ -7,6 +7,7 @@
 
 #include "server/Server.hpp"
 #include "server/Connection.hpp"
+#include "server/EventLoop.hpp"
 
 #include "config/globalConfig.hpp"
 #include "config/configParser.hpp"
@@ -24,7 +25,7 @@
 
 static int runHttpTests(const globalConfig &config)
 {
-	Router router(config);
+	Router router(const_cast<globalConfig *>(&config));
 	HttpParser parser;
 
 	std::string requests[] = {
@@ -101,11 +102,19 @@ static int runHttpTests(const globalConfig &config)
 			for (std::map<std::string, std::string>::const_iterator it = m.begin();
 				 it != m.end(); ++it)
 				std::cout << "  [" << it->first << "] = " << it->second << std::endl;
+
+			Connection testConn;
+			router.setConfig(const_cast<globalConfig *>(&config));
+			router.setConnEnv(testConn);
+			router.resolve(req, response);
+
+			/*
 			// router.route(req, res) should be called from the outside instead of handlers:
 			RequestHandler *handler = &(router.resolve(req)); // for test purposes, to be removed
 			handler->handleRequest(req, response);			  // same
 			req.setHeader("cookie", response.getHeader("set-cookie"));
-			// here should be conn.writeBuffer = res.toString() to be called from the outside
+			
+			*/// here should be conn.writeBuffer = res.toString() to be called from the outside
 		}
 		catch (const HttpException &e)
 		{ // block should be reviewed
@@ -127,6 +136,8 @@ static int runHttpTests(const globalConfig &config)
 
 int main(int argc, char **argv)
 {
+	
+	
 	if (argc != 2 && argc != 3)
 	{
 		std::cerr << "Invalid number of arguments: ";
@@ -140,10 +151,25 @@ int main(int argc, char **argv)
 		if (argc == 3 && std::string(argv[2]) == "--http-tests")
 			return runHttpTests(config);
 
-		Server server;
+		EventLoop eventLoop;
+		Server server(eventLoop);
+
+		for (size_t i = 0; i < config.servers.size(); ++i)
+		{
+			if (config.servers[i]._listens.empty())
+				server.setup(4242, static_cast<int>(i));
+			else
+			{
+				for (size_t j = 0; j < config.servers[i]._listens.size(); ++j)
+					server.setup(config.servers[i]._listens[j], static_cast<int>(i));
+			}
+		}
+
+		server.run(config);
+		/* Server server;
 
 		server.setup(4242);
-		server.run();
+		server.run();*/
 	}
 	catch (const std::exception &e)
 	{

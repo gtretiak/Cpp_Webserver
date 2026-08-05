@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   EventLoop.cpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: nogioni- <nogioni-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 21:03:51 by nogioni-          #+#    #+#             */
-/*   Updated: 2026/07/17 22:01:20 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/05 16:55:10 by nogioni-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -184,7 +184,10 @@ void EventLoop::acceptClient(int listenFd)
 			throw std::runtime_error("fcntl(F_SETFL) failed on client");
 		}
 
+		int server_idx = _listenFdsMAP[listenFd];
+
 		Connection conn(clientFd);
+		conn.serverIndex = server_idx;
 		_connections[clientFd] = conn;
 
 		struct pollfd pfd;
@@ -193,8 +196,6 @@ void EventLoop::acceptClient(int listenFd)
 		pfd.revents = 0;
 
 		_pollFds.push_back(pfd);
-		
-		int	server_idx = _listenFdsMAP[listenFd];
 		_listenFdsMAP.insert(std::make_pair(clientFd, server_idx));
 		std::cout << "Client connected: fd " << clientFd << ", server index: " << server_idx << std::endl;
 	}
@@ -232,15 +233,23 @@ void EventLoop::readClient(int clientFd)
 
 	if (!conn.readBuffer.empty() && conn.writeBuffer.empty())
 	{
-		std::cout << "----- RAW REQUEST from fd " << clientFd << " -----\n"
+		/*std::cout << "----- RAW REQUEST from fd " << clientFd << " -----\n"
 				<< conn.readBuffer
-				<< "\n----- END REQUEST -----" << std::endl;
+				<< "\n----- END REQUEST -----" << std::endl;*/
 
 		try {
-			HttpParser	parser;
+			HttpParser parser;
 
-			parser.parseRequest(conn.readBuffer, &conn.req);
-			conn.readBuffer.clear();
+			if (!parser.isRequestComplete(conn.readBuffer))
+				return;
+
+			std::cout << "----- RAW REQUEST from fd " << clientFd << " -----\n"
+					  << conn.readBuffer
+					  << "\n----- END REQUEST -----" << std::endl;
+
+			size_t consumed = parser.parseRequest(conn.readBuffer, &conn.req);
+			conn.readBuffer.erase(0, consumed);
+
 			std::cout << "\n************** printRequest() **************" << std::endl;
 			printRequest(conn.req);
 			std::cout << "\n************** printRequest() (END) **************" << std::endl;
@@ -495,8 +504,44 @@ void	EventLoop::handleHttpError( int clientFd, int errorCode ) {
 	Connection	&conn = _connections[clientFd];
 
 	conn.res = HttpResponse();
+
+	conn.res.setStatus(errorCode);
+	conn.res.setHeader("connection", "close");
+	conn.shouldClose = true;
+
 	idx = matchConnToServerIndex(clientFd);
-	std::cout << "EventLoop::handleHttpError(): clientFd = " << clientFd << ", errorCode = " << errorCode << ", server index = " << idx << std::endl;
+
+	if (idx != -1)
+	{
+		std::map<int, std::string>::iterator it =
+			_config->servers[idx]._error_pages.find(errorCode);
+
+		if (it != _config->servers[idx]._error_pages.end())
+		{
+			std::string filepath = _config->servers[idx]._root + it->second;
+			try
+			{
+				conn.res.generateErrorPageResponse(filepath.c_str());
+				return;
+			}
+			catch (const HttpException &e)
+			{
+				(void)e;
+			}
+		}
+	}
+
+	std::ostringstream body;
+	body << "<html><body><h1>"
+		 << errorCode
+		 << " "
+		 << "Error"
+		 << "</h1></body></html>";
+
+	conn.res.setHeader("content-type", "text/html");
+	conn.res.setBody(body.str());
+
+	/* std::cout << "EventLoop::handleHttpError(): clientFd = " << clientFd << ", errorCode = " << errorCode << ", server index = " << idx << std::endl;
 	if (idx == -1) {//possible error, because clientFd do not match any server
 		//error decide how to handle this case. maybe internal server error 500
 		std::cout << "******** Error idx = -1 *********" << std::endl;
@@ -520,5 +565,5 @@ void	EventLoop::handleHttpError( int clientFd, int errorCode ) {
 			printResponse(conn.res);
 			std::cout << "********** Error page generated from config file (END) **********" << std::endl;
 		}
-	}
+	}*/
 }

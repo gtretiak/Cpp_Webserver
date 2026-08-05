@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: nogioni- <nogioni-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 21:21:10 by nogioni-          #+#    #+#             */
-/*   Updated: 2026/07/05 20:09:06 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/07/21 15:31:32 by nogioni-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 
 #include <vector>
 #include "Socket.hpp"
+#include "../config/locationConfig.hpp"
 
 class	EventLoop;
 struct	globalConfig;
