@@ -1,6 +1,7 @@
 #include "Connection.hpp"
 
-Connection::Connection() : CgiRequestHandler() {
+Connection::Connection() : CgiRequestHandler(), matchedServer(NULL), matchedLocation(NULL)
+{
 	fd = -1;
 	serverIndex = -1;
 	readBuffer = "";
@@ -14,7 +15,8 @@ Connection::Connection() : CgiRequestHandler() {
 	cgiData = CgiContext();
 }
 
-Connection::Connection(int clientFd) : CgiRequestHandler(), fd(clientFd) {
+Connection::Connection(int clientFd) : CgiRequestHandler(), fd(clientFd), matchedServer(NULL), matchedLocation(NULL)
+{
 	serverIndex = -1;
 	readBuffer = "";
 	writeBuffer = "";
@@ -27,9 +29,11 @@ Connection::Connection(int clientFd) : CgiRequestHandler(), fd(clientFd) {
 	cgiData = CgiContext();
 }
 
-Connection::Connection(const Connection& other) : CgiRequestHandler(),
+Connection::Connection(const Connection& other) : CgiRequestHandler(), 
 	fd(other.fd),
 	serverIndex(other.serverIndex),
+	matchedServer(other.matchedServer),
+	matchedLocation(other.matchedLocation),
 	readBuffer(other.readBuffer),
 	writeBuffer(other.writeBuffer),
 	httpVersion(other.httpVersion),
@@ -46,6 +50,8 @@ Connection& Connection::operator=(const Connection& other) {
 	if (this != &other) {
 		fd = other.fd;
 		serverIndex = other.serverIndex;
+		matchedServer = other.matchedServer;
+		matchedLocation = other.matchedLocation;
 		readBuffer = other.readBuffer;
 		writeBuffer = other.writeBuffer;
 		httpVersion = other.httpVersion;

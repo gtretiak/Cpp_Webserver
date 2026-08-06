@@ -10,6 +10,8 @@
 #include <poll.h>
 #include <cstdlib>
 #include <unistd.h>
+#include "../config/serverConfig.hpp"
+#include "../config/locationConfig.hpp"
 
 enum ConnectionState {
 	READING,//readClient, accumulate bytes from client socket
@@ -54,6 +56,8 @@ typedef struct CgiContext {
 struct Connection : public CgiRequestHandler {
 	int	fd;						// client fd
 	int	serverIndex;
+	serverConfig	*matchedServer;
+	locationConfig	*matchedLocation;
 	std::string	readBuffer;		// bytes received bu recv()
 	std::string	writeBuffer;	// bytes pending to send()
 	std::string	httpVersion;	// filled after by parser

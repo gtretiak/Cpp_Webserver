@@ -7,8 +7,25 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <cstdlib>
+#include <sys/stat.h>
+#include <vector>
+#include <dirent.h>
+#include <cerrno>
 
-StaticRequestHandler::StaticRequestHandler(){}
+StaticRequestHandler::StaticRequestHandler() : _config(NULL),
+											   _server(NULL),
+											   _location(NULL)
+{}
+void StaticRequestHandler::setConfig(globalConfig *config)
+{
+	_config = config;
+}
+
+void StaticRequestHandler::setContext(serverConfig *server, locationConfig *location)
+{
+	_server = server;
+	_location = location;
+}
 
 std::string	StaticRequestHandler::readFile(const std::string &path) {
 	int	fd = open(path.c_str(), O_RDONLY);
@@ -53,7 +70,7 @@ bool	StaticRequestHandler::fileExists(const std::string &path) {
 	return (true);
 }
 bool	StaticRequestHandler::hasWDPermission(const std::string &path) {
-	if (path.find("./www/uploads") == std::string::npos)
+	if (path.find("uploads") == std::string::npos)
 		return false;
 	return true;
 }
@@ -77,6 +94,123 @@ std::string	StaticRequestHandler::getFileName(const std::string &path) {
 	return (path.substr(pos + 1));
 }
 
+std::string StaticRequestHandler::getRoot() const
+{
+	if (_location && !_location->_root.empty())
+		return _location->_root;
+	if (_server && !_server->_root.empty())
+		return _server->_root;
+	throw HttpException(500, "No root directive configured");
+}
+
+std::string StaticRequestHandler::buildFilePath(const std::string &root, const std::string &path) const
+{
+	if (root.empty())
+		throw HttpException(500, "Empty root directive");
+
+	if (!root.empty() && root[root.size() - 1] == '/' && !path.empty() && path[0] == '/')
+		return root + path.substr(1);
+
+	if (!root.empty() && root[root.size() - 1] != '/' && !path.empty() && path[0] != '/')
+		return root + "/" + path;
+
+	return root + path;
+}
+
+bool StaticRequestHandler::isDirectory(const std::string &path) const
+{
+	struct stat st;
+
+	if (stat(path.c_str(), &st) == -1)
+		return false;
+	return S_ISDIR(st.st_mode);
+}
+
+bool StaticRequestHandler::isRegularFile(const std::string &path) const
+{
+	struct stat st;
+
+	if (stat(path.c_str(), &st) == -1)
+		return false;
+	return S_ISREG(st.st_mode);
+}
+
+std::string StaticRequestHandler::resolveIndexFile(const std::string &dirPath) const
+{
+	const std::vector<std::string> *indexes;
+
+	indexes = NULL;
+	if (_location && !_location->_index.empty())
+		indexes = &_location->_index;
+	else if (_server && !_server->_index.empty())
+		indexes = &_server->_index;
+
+	if (indexes == NULL)
+		return "";
+
+	for (size_t i = 0; i < indexes->size(); ++i)
+	{
+		std::string candidate = dirPath;
+
+		if (!candidate.empty() && candidate[candidate.size() - 1] != '/')
+			candidate += "/";
+		candidate += (*indexes)[i];
+
+		if (isRegularFile(candidate))
+			return candidate;
+	}
+	return "";
+}
+
+bool StaticRequestHandler::getAutoindex() const
+{
+	if (_location)
+		return _location->_autoindex;
+	if (_server)
+		return _server->_autoindex;
+	return false;
+}
+
+std::string StaticRequestHandler::generateAutoindexPage(const std::string &requestPath, const std::string &dirPath) const
+{
+	DIR *dir = opendir(dirPath.c_str());
+	if (dir == NULL)
+	{
+		if (errno == EACCES)
+			throw HttpException(403, "Directory listing forbidden");
+		throw HttpException(404, "Directory not found");
+	}
+
+	std::ostringstream html;
+
+	html << "<html><head><title>Index of " << requestPath << "</title></head><body>";
+	html << "<h1>Index of " << requestPath << "</h1>";
+	html << "<ul>";
+
+	struct dirent *entry;
+	while ((entry = readdir(dir)) != NULL)
+	{
+		std::string name = entry->d_name;
+
+		if (name == ".")
+			continue;
+
+		std::string href = requestPath;
+		if (href.empty())
+			href = "/";
+		if (href[href.size() - 1] != '/')
+			href += "/";
+		href += name;
+
+		html << "<li><a href=\"" << href << "\">" << name << "</a></li>";
+	}
+
+	closedir(dir);
+
+	html << "</ul></body></html>";
+	return html.str();
+}
+
 void	StaticRequestHandler::handleRequest(HttpRequest &req, HttpResponse &res) {
 	std::string	path = req.getPath();
 	std::string	method = req.getMethod();
@@ -87,19 +221,22 @@ void	StaticRequestHandler::handleRequest(HttpRequest &req, HttpResponse &res) {
 	if (dotPos != std::string::npos)
 		extension = path.substr(dotPos);
 	std::string	type = MimeTypes::getMimeType(extension);
-	std::string	root = "./www"; //fetch from globalConfig or serverConfig
+	//std::string	root = "./www"; //fetch from globalConfig or serverConfig
 	//to fetch root from location config depends on the existence of locationConfig instance and root directive available
 /*	if (loc) // to add once we have location config (and as a parameter too) TODO
 		root = loc->root;*/
-	std::string	filePath = root + path;
+	//std::string	filePath = root + path;
 	/*if (type == "text/html")//temporary if/else block, to be removed TODO
 		filePath = root + "/html" + path;
 	else
 		filePath = root + "/application" + path;*/
+
+	std::string root = getRoot();
+	std::string filePath = buildFilePath(root, path);
 	std::cout << "type(text/html?:[" << type << "],\npath:[" << path << "]\nfilepath:[" << filePath << "]" << std::endl;//for development purposes only; to be removed TODO
 	res.setHeader("connection", "keep-alive");//if the connection is still open
 	res.setHeader("cache-control", "public, max-age=3600");
-	if (method == "GET")
+	/*if (method == "GET")
 	{
 		std::string	content = readFile(filePath);
 		res.setStatus(200);
@@ -109,6 +246,37 @@ void	StaticRequestHandler::handleRequest(HttpRequest &req, HttpResponse &res) {
 		std::cout << "\nRESPONSE ->\n";//cout - conn.writeBuffer equivalent TODO
 		std::cout << res.toString() << std::endl;//to test only, to be sent to writeBuffer TODO
 		//system(("open " + filePath).c_str());//to test only, to be removed TODO
+	}*/
+	if (method == "GET")
+	{
+		if (isDirectory(filePath))
+		{
+			std::string indexPath = resolveIndexFile(filePath);
+
+			if (!indexPath.empty())
+				filePath = indexPath;
+			else if (getAutoindex())
+			{
+				std::string content = generateAutoindexPage(path, filePath);
+				res.setStatus(200);
+				res.setHeader("content-type", "text/html");
+				res.setBody(content);
+				return;
+			}
+			else
+				throw HttpException(403, "Directory listing forbidden");
+		}
+
+		extension = "UnknownByDefault";
+		dotPos = filePath.find_last_of('.');
+		if (dotPos != std::string::npos)
+			extension = filePath.substr(dotPos);
+		type = MimeTypes::getMimeType(extension);
+
+		std::string content = readFile(filePath);
+		res.setStatus(200);
+		res.setHeader("content-type", type);
+		res.setBody(content);
 	}
 	else if (method == "POST")
 	{
@@ -138,4 +306,5 @@ void	StaticRequestHandler::handleRequest(HttpRequest &req, HttpResponse &res) {
 	}
 //	res.setHeader("set-cookie", "sessionId=abc123; Max-Age=3600");// should be moved from here
 }
+
 StaticRequestHandler::~StaticRequestHandler() {}

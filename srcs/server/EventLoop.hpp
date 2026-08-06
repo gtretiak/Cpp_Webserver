@@ -6,7 +6,7 @@
 /*   By: nogioni- <nogioni-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 21:03:53 by nogioni-          #+#    #+#             */
-/*   Updated: 2026/07/21 15:31:12 by nogioni-         ###   ########.fr       */
+/*   Updated: 2026/08/06 17:08:21 by nogioni-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,8 @@
 #include <map>
 #include <poll.h>
 #include <signal.h>
+#include "../config/serverConfig.hpp"
+#include "../config/locationConfig.hpp"
 
 extern volatile sig_atomic_t	g_shutdown;
 
@@ -66,6 +68,10 @@ class	EventLoop
 
 		int		matchConnToServerIndex(int clientFd);
 		void	handleHttpError(int clientFd, int errorCode);
+
+		locationConfig *findBestLocation(serverConfig &server, const std::string &path);
+		bool locationMatches(const std::string &locationPath, const std::string &requestPath) const;
+		size_t getMaxBodySizeForRequest(const std::string &readBuffer, int serverIndex);
 };
 
 #endif

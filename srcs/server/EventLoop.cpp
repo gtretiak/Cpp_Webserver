@@ -6,7 +6,7 @@
 /*   By: nogioni- <nogioni-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 21:03:51 by nogioni-          #+#    #+#             */
-/*   Updated: 2026/08/05 16:55:10 by nogioni-         ###   ########.fr       */
+/*   Updated: 2026/08/06 17:22:40 by nogioni-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -201,10 +201,39 @@ void EventLoop::acceptClient(int listenFd)
 	}
 }
 
+bool EventLoop::locationMatches(const std::string &locationPath, const std::string &requestPath) const
+{
+	if (locationPath.empty())
+		return false;
+	if (locationPath == "/")
+		return true;
+	if (requestPath.compare(0, locationPath.size(), locationPath) != 0)
+		return false;
+	return true;
+}
+
+locationConfig *EventLoop::findBestLocation(serverConfig &server, const std::string &path)
+{
+	locationConfig *best = NULL;
+	size_t bestLen = 0;
+
+	for (size_t i = 0; i < server._locations.size(); ++i)
+	{
+		std::string locationPath = server._locations[i]._path;
+
+		if (locationMatches(locationPath, path) && locationPath.size() > bestLen)
+		{
+			best = &server._locations[i];
+			bestLen = locationPath.size();
+		}
+	}
+	return best;
+}
+
 void EventLoop::readClient(int clientFd)
 {
-	char		buffer[4096];
-	Connection	&conn = _connections[clientFd];
+	char buffer[4096];
+	Connection &conn = _connections[clientFd];
 
 	while (true)
 	{
@@ -217,7 +246,8 @@ void EventLoop::readClient(int clientFd)
 		}
 		else if (bytes == 0)
 		{
-			std::cout << "\n\n\nCLOSE CLIENT 2\n\n\n" << std::endl;
+			std::cout << "\n\n\nCLOSE CLIENT 2\n\n\n"
+					  << std::endl;
 			closeClient(clientFd);
 			return;
 		}
@@ -225,20 +255,23 @@ void EventLoop::readClient(int clientFd)
 		{
 			if (errno == EAGAIN || errno == EWOULDBLOCK)
 				break;
-			std::cout << "\n\n\nCLOSE CLIENT 3\n\n\n" << std::endl;
+			std::cout << "\n\n\nCLOSE CLIENT 3\n\n\n"
+					  << std::endl;
 			closeClient(clientFd);
 			return;
 		}
-	} //this block will read all the bytes available in the socket buffer, until it returns EAGAIN or EWOULDBLOCK, which means there are no more bytes to read at the moment
+	}
 
 	if (!conn.readBuffer.empty() && conn.writeBuffer.empty())
 	{
-		/*std::cout << "----- RAW REQUEST from fd " << clientFd << " -----\n"
-				<< conn.readBuffer
-				<< "\n----- END REQUEST -----" << std::endl;*/
-
-		try {
+		try
+		{
 			HttpParser parser;
+
+			if (_config && conn.serverIndex >= 0 && static_cast<size_t>(conn.serverIndex) < _config->servers.size() && _config->servers[conn.serverIndex]._has_client_max_body_size)
+			{
+				parser.setMaxBodySize(_config->servers[conn.serverIndex]._client_max_body_size);
+			}
 
 			if (!parser.isRequestComplete(conn.readBuffer))
 				return;
@@ -254,72 +287,45 @@ void EventLoop::readClient(int clientFd)
 			printRequest(conn.req);
 			std::cout << "\n************** printRequest() (END) **************" << std::endl;
 
-			if (conn.req.getUrl() == "/") { //VERSA0 PATH 
-				std::ostringstream	resp;
-				std::ostringstream	body;
-				std::ifstream		file("www/html/index.html");
-	
-				body << file.rdbuf();
-				std::string bodyContent = body.str();
-				std::size_t bodySize = bodyContent.size();
+			Router router;
+			router.setConfig(_config);
+			router.setConnEnv(conn);
 
-				resp << "HTTP/1.1 200 OK\r\n"
-					<< "Content-Type: text/html\r\n"
-					<< "Content-Length: " << bodySize << "\r\n"
-					<< "\r\n"
-					<< bodyContent;
-				
-				conn.writeBuffer = resp.str();
-				//this block is hardcoded for testing
+			conn.state = RUNNING;
+
+			if (router.resolve(conn.req, conn.res) == 0)
+			{
+				_pollFds.push_back(conn.cgiData.pollFd);
+				_cgifdToPollfd[conn.cgiData.outFd] = clientFd;
+
+				writeRequestBodyToCgi(conn.req, conn.cgiData.inFd);
+				close(conn.cgiData.inFd);
+				conn.cgiData.inFd = -1;
 			}
-			/*else if (conn.req.getUrl() == "/favicon.ico") {
-				std::ostringstream	resp;
-				std::ostringstream	body;
-				std::ifstream		file("www/html/favicon.ico", std::ios::binary);
-	
-				body << file.rdbuf();
-				std::string bodyContent = body.str();
-				std::size_t bodySize = bodyContent.size();
+			else
+			{
+				size_t bodySize = conn.res.getBody().size();
+				if (bodySize > 0)
+				{
+					std::stringstream ss;
 
-				resp << "HTTP/1.1 200 OK\r\n"
-					<< "Content-Type: image/x-icon\r\n"
-					<< "Content-Length: " << bodySize << "\r\n"
-					<< "\r\n"
-					<< bodyContent;
-				
-				conn.writeBuffer = resp.str();
-			} //THIS BLOCK IS HARD-CODED FOR TESTING, REMOVE LATER*/
-			else {
-				Router	router;
-				router.setConfig(_config);
-				router.setConnEnv(conn);
-
-				conn.state = RUNNING;
-				
-				// 0 for cgi 1 for static
-				if (router.resolve(conn.req, conn.res) == 0) {
-					_pollFds.push_back(conn.cgiData.pollFd);//register the cgi script output fd to the pollfd vector
-					_cgifdToPollfd[conn.cgiData.outFd] = clientFd;
-
-					writeRequestBodyToCgi(conn.req, conn.cgiData.inFd);
-					close(conn.cgiData.inFd);
-					conn.cgiData.inFd = -1;
-				} else {
-					size_t	bodySize = conn.res.getBody().size();
-					if (bodySize > 0) {
-						std::stringstream	ss;
-
-						ss << bodySize;
-						if (conn.res.hasHeader("Content-Length") == false)
-							conn.res.setHeader("Content-Length", ss.str());
-					}
-					conn.writeBuffer = conn.res.toString();
+					ss << bodySize;
+					if (conn.res.hasHeader("Content-Length") == false)
+						conn.res.setHeader("Content-Length", ss.str());
 				}
+				conn.writeBuffer = conn.res.toString();
 			}
-			//printResponse(conn.res);
-			conn.shouldClose = !conn.req.hasHeader("connection") || conn.req.getHeader("connection") != "keep-alive";
+
+			conn.shouldClose = false;
+
+			if (!conn.req.hasHeader("connection") || conn.req.getHeader("connection") != "keep-alive")
+				conn.shouldClose = true;
+
+			if (conn.res.hasHeader("connection") && conn.res.getHeader("connection") == "close")
+				conn.shouldClose = true;
 		}
-		catch (const HttpException& e) {
+		catch (const HttpException &e)
+		{
 			std::cout << e.what() << std::endl;
 			std::cout << "strerror: " << strerror(errno) << std::endl;
 
@@ -327,7 +333,7 @@ void EventLoop::readClient(int clientFd)
 			handleHttpError(clientFd, e.code());
 			conn.writeBuffer = conn.res.toString();
 		}
-		//conn.shouldClose = true;
+
 		updateClientEvents(clientFd);
 	}
 }
@@ -499,26 +505,66 @@ int	EventLoop::matchConnToServerIndex( int clientFd ) {
 	return -1;
 }
 
-void	EventLoop::handleHttpError( int clientFd, int errorCode ) {
-	int			idx;
-	Connection	&conn = _connections[clientFd];
+void EventLoop::handleHttpError(int clientFd, int errorCode)
+{
+	int idx;
+	Connection &conn = _connections[clientFd];
 
 	conn.res = HttpResponse();
-
 	conn.res.setStatus(errorCode);
 	conn.res.setHeader("connection", "close");
 	conn.shouldClose = true;
 
 	idx = matchConnToServerIndex(clientFd);
 
-	if (idx != -1)
+	if (conn.matchedLocation && conn.matchedServer)
+	{
+		std::map<int, std::string>::iterator locIt =
+			conn.matchedLocation->_error_pages.find(errorCode);
+
+		if (locIt != conn.matchedLocation->_error_pages.end())
+		{
+			std::string root = conn.matchedServer->_root;
+			std::string errorPath = locIt->second;
+			std::string filepath;
+
+			if (!root.empty() && root[root.size() - 1] == '/' && !errorPath.empty() && errorPath[0] == '/')
+				filepath = root + errorPath.substr(1);
+			else if (!root.empty() && root[root.size() - 1] != '/' && !errorPath.empty() && errorPath[0] != '/')
+				filepath = root + "/" + errorPath;
+			else
+				filepath = root + errorPath;
+
+			try
+			{
+				conn.res.generateErrorPageResponse(filepath.c_str());
+				return;
+			}
+			catch (const HttpException &e)
+			{
+				(void)e;
+			}
+		}
+	}
+
+	if (idx != -1 && _config && static_cast<size_t>(idx) < _config->servers.size())
 	{
 		std::map<int, std::string>::iterator it =
 			_config->servers[idx]._error_pages.find(errorCode);
 
 		if (it != _config->servers[idx]._error_pages.end())
 		{
-			std::string filepath = _config->servers[idx]._root + it->second;
+			std::string root = _config->servers[idx]._root;
+			std::string errorPath = it->second;
+			std::string filepath;
+
+			if (!root.empty() && root[root.size() - 1] == '/' && !errorPath.empty() && errorPath[0] == '/')
+				filepath = root + errorPath.substr(1);
+			else if (!root.empty() && root[root.size() - 1] != '/' && !errorPath.empty() && errorPath[0] != '/')
+				filepath = root + "/" + errorPath;
+			else
+				filepath = root + errorPath;
+
 			try
 			{
 				conn.res.generateErrorPageResponse(filepath.c_str());
@@ -534,36 +580,9 @@ void	EventLoop::handleHttpError( int clientFd, int errorCode ) {
 	std::ostringstream body;
 	body << "<html><body><h1>"
 		 << errorCode
-		 << " "
-		 << "Error"
+		 << " Error"
 		 << "</h1></body></html>";
 
 	conn.res.setHeader("content-type", "text/html");
 	conn.res.setBody(body.str());
-
-	/* std::cout << "EventLoop::handleHttpError(): clientFd = " << clientFd << ", errorCode = " << errorCode << ", server index = " << idx << std::endl;
-	if (idx == -1) {//possible error, because clientFd do not match any server
-		//error decide how to handle this case. maybe internal server error 500
-		std::cout << "******** Error idx = -1 *********" << std::endl;
-	}
-	if (_config->servers[idx]._error_pages.empty()) {
-		//no error pages configured use default
-		// solve default by search e.code + html in root + error pages folder
-	}
-	else {
-		std::map<int, std::string>::iterator	it;
-		
-		it = _config->servers[idx]._error_pages.find(errorCode);
-		if (it != _config->servers[idx]._error_pages.end()) {
-			//we find
-			//second argument is the path
-			std::string	filepath = _config->servers[idx]._root + it->second;
-			conn.res.setStatus(errorCode);
-			conn.res.generateErrorPageResponse(filepath.c_str());
-			
-			std::cout << "********** Error page generated from config file **********" << std::endl;
-			printResponse(conn.res);
-			std::cout << "********** Error page generated from config file (END) **********" << std::endl;
-		}
-	}*/
 }
