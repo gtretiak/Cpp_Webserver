@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/27 10:42:25 by gtretiak          #+#    #+#             */
-/*   Updated: 2026/08/02 20:27:48 by gtretiak         ###   ########.fr       */
+/*   Updated: 2026/08/07 00:02:20 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,7 @@
 #include <cstdlib>
 #include <vector>
 #include <iostream>
+#include <errno.h>
 #include "../server/Connection.hpp"
 
 static const size_t	MAX_HEADER_SIZE = 8192;//Traditional limit used by nginx, Apache, etc.

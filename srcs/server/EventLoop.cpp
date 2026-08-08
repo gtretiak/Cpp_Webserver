@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 21:03:51 by nogioni-          #+#    #+#             */
-/*   Updated: 2026/07/17 22:01:20 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/08 00:41:11 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 #include "../http/Router.hpp"
 #include "../config/globalConfig.hpp"
 #include "../http/HttpException.hpp"
+#include "../http/HttpUtils.hpp"
 #include "Connection.hpp"
 #include <stdexcept>
 #include <cerrno>
@@ -110,13 +111,13 @@ void EventLoop::run(globalConfig& config)
 
 			if (revents & (POLLERR | POLLHUP | POLLNVAL))
 			{
-				if (_cgifdToPollfd.count(fd)) {
+				if (_cgifdToPollfd.count(fd)) { //cgi fd trigged, redirections case
 					std::cout << "\n\n\nCGI POLLHUP FOR FD: "<< fd << "\n\n\n" << std::endl;
 					continueCgi(fd);
 					continue;
 				}
 				if (!isListenFd(fd)) {
-					std::cout << "\n\n\nCLOSE CLIENT 1\n\n\n" << std::endl;
+					std::cout << "\n\n\nCLOSE CLIENT - 1\n\n\n" << std::endl;
 					closeClient(fd);
 				}
 				continue;
@@ -127,11 +128,11 @@ void EventLoop::run(globalConfig& config)
 			else
 			{
 				if (revents & POLLIN) {
-					if (_cgifdToPollfd.count(fd)) {//if the poll triggers the cgi fd, enter here
+					if (_cgifdToPollfd.count(fd)) {//cgi fd trigged
 						std::cout << "\n\n\nCGI POLLIN\n\n\n" << std::endl;
 						continueCgi(fd);
 					}
-					else //non cgi fd, enter here
+					else //non cgi fd trigged
 						readClient(fd);
 				}
 				if (revents & POLLOUT) {
@@ -202,35 +203,35 @@ void EventLoop::acceptClient(int listenFd)
 
 void EventLoop::readClient(int clientFd)
 {
-	char		buffer[4096];
+	char		buffer[8192];
 	Connection	&conn = _connections[clientFd];
 
-	while (true)
+
+	//1* Read once. No while loop. No errno checks.
+	ssize_t bytes = recv(clientFd, buffer, sizeof(buffer), 0);
+
+	if (bytes > 0)
 	{
-		ssize_t bytes = recv(clientFd, buffer, sizeof(buffer), 0);
+		conn.readBuffer.append(buffer, bytes);
+		conn.lastActivity = time(NULL);
+	}
+	else if (bytes == 0)
+	{
+		std::cout << "\n\n\nCLOSE CLIENT 2\n\n\n" << std::endl;
+		closeClient(clientFd);
+		return;
+	}
+	else
+	{
+		std::cout << "\n\n\ncloseClient at readClient (recv Error)\n\n\n" << std::endl;
+		closeClient(clientFd);
+		return;
+	}
 
-		if (bytes > 0)
-		{
-			conn.readBuffer.append(buffer, bytes);
-			conn.lastActivity = time(NULL);
-		}
-		else if (bytes == 0)
-		{
-			std::cout << "\n\n\nCLOSE CLIENT 2\n\n\n" << std::endl;
-			closeClient(clientFd);
-			return;
-		}
-		else
-		{
-			if (errno == EAGAIN || errno == EWOULDBLOCK)
-				break;
-			std::cout << "\n\n\nCLOSE CLIENT 3\n\n\n" << std::endl;
-			closeClient(clientFd);
-			return;
-		}
-	} //this block will read all the bytes available in the socket buffer, until it returns EAGAIN or EWOULDBLOCK, which means there are no more bytes to read at the moment
+	//2* check the request completeness and parse it if complete. If not, wait for more data.
+	bool	isRequestComplete = validateRawBufferRequest(conn);
 
-	if (!conn.readBuffer.empty() && conn.writeBuffer.empty())
+	if (isRequestComplete && conn.writeBuffer.empty())
 	{
 		std::cout << "----- RAW REQUEST from fd " << clientFd << " -----\n"
 				<< conn.readBuffer
@@ -240,7 +241,10 @@ void EventLoop::readClient(int clientFd)
 			HttpParser	parser;
 
 			parser.parseRequest(conn.readBuffer, &conn.req);
-			conn.readBuffer.clear();
+
+			//erases only the number of bytes readed. body + headers + \r\n\r\n
+			conn.readBuffer.erase(0, conn.req.getBody().size() + conn.readBuffer.find("\r\n\r\n") + 4);
+			
 			std::cout << "\n************** printRequest() **************" << std::endl;
 			printRequest(conn.req);
 			std::cout << "\n************** printRequest() (END) **************" << std::endl;
@@ -261,25 +265,7 @@ void EventLoop::readClient(int clientFd)
 					<< bodyContent;
 				
 				conn.writeBuffer = resp.str();
-				//this block is hardcoded for testing
 			}
-			/*else if (conn.req.getUrl() == "/favicon.ico") {
-				std::ostringstream	resp;
-				std::ostringstream	body;
-				std::ifstream		file("www/html/favicon.ico", std::ios::binary);
-	
-				body << file.rdbuf();
-				std::string bodyContent = body.str();
-				std::size_t bodySize = bodyContent.size();
-
-				resp << "HTTP/1.1 200 OK\r\n"
-					<< "Content-Type: image/x-icon\r\n"
-					<< "Content-Length: " << bodySize << "\r\n"
-					<< "\r\n"
-					<< bodyContent;
-				
-				conn.writeBuffer = resp.str();
-			} //THIS BLOCK IS HARD-CODED FOR TESTING, REMOVE LATER*/
 			else {
 				Router	router;
 				router.setConfig(_config);
@@ -346,8 +332,7 @@ void EventLoop::writeClient(int clientFd)
 	}
 	else if (sent == -1)
 	{
-		if (errno == EAGAIN || errno == EWOULDBLOCK)
-			return;
+		//no need to check for EAGAIN or EWOULDBLOCK, because POLLOUT guaratees the socket availability to write, so if send() returns -1, it is a real error
 		std::cout << "\n\n\nCLOSE CLIENT 4\n\n\n" << std::endl;
 		closeClient(clientFd);
 		return;
@@ -493,32 +478,84 @@ int	EventLoop::matchConnToServerIndex( int clientFd ) {
 void	EventLoop::handleHttpError( int clientFd, int errorCode ) {
 	int			idx;
 	Connection	&conn = _connections[clientFd];
+	std::string	errorPagePath;
 
 	conn.res = HttpResponse();
 	idx = matchConnToServerIndex(clientFd);
 	std::cout << "EventLoop::handleHttpError(): clientFd = " << clientFd << ", errorCode = " << errorCode << ", server index = " << idx << std::endl;
-	if (idx == -1) {//possible error, because clientFd do not match any server
-		//error decide how to handle this case. maybe internal server error 500
-		std::cout << "******** Error idx = -1 *********" << std::endl;
+	if (idx == -1) {
+		//error, because clientFd do not match any server
+		//generate internal server error 500
+		std::cout << "******** Error(handleHttpError): client does not match any server *********" << std::endl;
+
+		errorPagePath = "www/html/error_pages/500.html";
+		conn.res.setStatus(500);
+		conn.res.generateErrorPageResponse(errorPagePath.c_str(), 500);
+		
 	}
 	if (_config->servers[idx]._error_pages.empty()) {
-		//no error pages configured use default
+		std::cout << "********** Error page generated from default **********" << std::endl;
+	
+		errorPagePath = "www/html/error_pages/" + ft_int_to_string(errorCode) + ".html";
+		conn.res.setStatus(errorCode);
+		conn.res.generateErrorPageResponse(errorPagePath.c_str(), errorCode);
 		// solve default by search e.code + html in root + error pages folder
 	}
 	else {
 		std::map<int, std::string>::iterator	it;
-		
+
 		it = _config->servers[idx]._error_pages.find(errorCode);
-		if (it != _config->servers[idx]._error_pages.end()) {
-			//we find
-			//second argument is the path
+		if (it != _config->servers[idx]._error_pages.end()) {//find in error_page directive
+			std::cout << "********** Error page generated from config file **********" << std::endl;
+			//it->second is the path to error page
 			std::string	filepath = _config->servers[idx]._root + it->second;
 			conn.res.setStatus(errorCode);
-			conn.res.generateErrorPageResponse(filepath.c_str());
+			conn.res.generateErrorPageResponse(filepath.c_str(), errorCode);
 			
 			std::cout << "********** Error page generated from config file **********" << std::endl;
 			printResponse(conn.res);
 			std::cout << "********** Error page generated from config file (END) **********" << std::endl;
 		}
+		else { //do not find the error code among the error_pages configured
+			errorPagePath = _config->servers[idx]._root + "/error_pages/" + ft_int_to_string(errorCode) + ".html";
+			conn.res.setStatus(errorCode);
+			conn.res.generateErrorPageResponse(errorPagePath.c_str(), errorCode);
+		}
 	}
+}
+
+/// @brief build logic to check if raw buffer of request is complete.
+/// @brief If not, return and wait for more data.
+/// @param buffer Raw buffer of request readed with recv() from client socket
+/// @param conn Connection object
+/// @return true if request is complete, false if not
+bool	EventLoop::validateRawBufferRequest( Connection& conn ) {
+	size_t		headerEndPos;
+	std::string	headers;
+
+	headerEndPos = conn.readBuffer.find("\r\n\r\n");
+	if (headerEndPos == std::string::npos)
+		return (false);
+	headers = toLower(conn.readBuffer.substr(0, headerEndPos));
+
+	if (headers.compare(0, 4, "get ") == 0 || headers.compare(0, 7, "delete ") == 0)
+		return (true);
+	else if (headers.compare(0, 5, "post ") == 0)
+	{
+		size_t	contentLengthPos = headers.find("content-length:");
+		if (contentLengthPos != std::string::npos)
+		{
+			size_t	valueStart = contentLengthPos + 15;
+			size_t	lineEnd = headers.find("\r\n", valueStart);
+			
+			std::string	lengthStr = headers.substr(valueStart, lineEnd - valueStart);
+			size_t		expectedLength = static_cast<size_t>(std::atoi(lengthStr.c_str()));
+			
+			size_t bodyStartPos = headerEndPos + 4;
+			size_t currentBodySize = conn.readBuffer.size() - bodyStartPos;
+			return currentBodySize >= expectedLength;
+		}
+		return (true);
+	}
+	return (true);//unkwon methiod
 }

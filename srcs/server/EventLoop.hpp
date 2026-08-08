@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 21:03:53 by nogioni-          #+#    #+#             */
-/*   Updated: 2026/07/13 11:05:16 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/07 01:21:57 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,6 +62,7 @@ class	EventLoop
 		void	removeFdFromPollFds(int fd); //removes a fd from the pollfd vector, used when closing a client or cgi script
 		void	continueCgi(int pipeFd);
 
+		bool	validateRawBufferRequest(Connection& conn);
 		int		matchConnToServerIndex(int clientFd);
 		void	handleHttpError(int clientFd, int errorCode);
 };

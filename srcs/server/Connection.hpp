@@ -51,7 +51,7 @@ typedef struct CgiContext {
 }	CgiContext;
 
 
-class	Connection : public CgiRequestHandler {
+struct	Connection : public CgiRequestHandler {
 	int	fd;						// client fd
 	std::string	readBuffer;		// bytes received bu recv()
 	std::string	writeBuffer;	// bytes pending to send()

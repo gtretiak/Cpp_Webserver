@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 11:54:28 by dopereir          #+#    #+#             */
-/*   Updated: 2026/07/15 11:06:28 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/07 01:16:38 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -68,9 +68,9 @@ public:
 	std::vector<directiveValue>	_directives;
 	std::map<int, std::string>	_return;
 	bool						_has_return;
-	std::string					upload_store;
 	cgiConfig					_cgi;
 	bool						_has_cgi;
+	std::string					upload_store;
 
 	locationConfig();
 	locationConfig(const locationConfig& other);

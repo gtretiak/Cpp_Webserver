@@ -8,18 +8,6 @@
 #include <cctype>
 #include <iomanip>
 #include <map>
-/*#include <ctime>//time_t, time(), gmtime()
-static std::string	getCurrentDate() {
-	std::time_t	now = std::time(NULL);
-	std::tm		*timeinfo = std::gmtime(&now);
-	char		buf[100];
-
-	if (!timeinfo)
-		return ("Thu, 01 Jan 1970 00:00:00 GMT");
-	if (std::strftime(buf, sizeof(buf), "%a, %d %b %Y %H:%M:%S GMT", timeinfo) == 0)
-		return ("Thu, 01 Jan 1970 00:00:00 GMT");
-	return (std::string(buf));
-}*/
 
 HttpResponse::HttpResponse() : version_("HTTP/1.1"), statusCode_(200),	statusText_(StatusCodes::getStatus(200)), has_status_(false) {
 //	date_ = getCurrentDate();TODO date remove or leave commented - forbidden
@@ -136,34 +124,32 @@ bool	HttpResponse::hasHeader(const std::string &k) const {
 
 HttpResponse::~HttpResponse() {}
 
-void	HttpResponse::generateErrorPageResponse(const char *filepath) {
-	char	*buffer = new char[BUFFER_SIZE];
-	int	fd = open(filepath, O_RDONLY);
+void	HttpResponse::generateErrorPageResponse( const char *filepath, int errorCode ) {
+	std::ostringstream	ss;
+	char	*buffer = new char[4096];
+	int		fd = open(filepath, O_RDONLY);
+
 	if (fd == -1)
-	{
+	{//if path fails to find or open, generate default error page
+		std::string	errorPage = createPrettyErrorPage(errorCode);
+		this->setBody(errorPage);
+		ss << this->body_.length();
+		this->setVersion("HTTP/1.1");
+		this->setHeader("Content-Type", "text/html");
 		delete[] buffer;
-		this->body_ = "<html><body><h1>"
-			"404 Not Found"
-			"</h1></body></html>";
-		this->setBody(this->body_);	
 		return ;
 	}
-	ssize_t	bytes = 1;
-
-	//std::cout << "****** debug: generateErrorPageResponse: filepath = " << filepath << std::endl;TODO - remove before submitting
-	while (bytes > 0)
-	{
-		bytes = read(fd, buffer, sizeof(buffer));
-		if (bytes <= 0)
-			break ;
-		this->body_.append(buffer, n);
+	std::cout << "****** debug: generateErrorPageResponse: filepath = " << filepath << std::endl;
+	//read file into buffer and append to body_
+	while (read(fd, buffer, sizeof(buffer) - 1) != 0) {
+		buffer[sizeof(buffer) - 1] = '\0';
+		this->body_ += buffer;
 	}
-//	std::cout << "****** debug: generateErrorPageResponse: body = " << this->body_ << std::endl;TODO - remove before submitting
-	std::ostringstream	ss;
+	std::cout << "****** debug: generateErrorPageResponse: body = " << this->body_ << std::endl;
 	ss << this->body_.length();
-	delete[] buffer;
 	this->setVersion("HTTP/1.1");
 	this->setHeader("Content-Length", ss.str());
 	this->setHeader("Content-Type", "text/html");
+	delete[] buffer;
 	close(fd);
 }

@@ -16,6 +16,7 @@ CONFIG_SRCS =	configParser.cpp \
 HTTP_SRCS =		HttpParser.cpp \
 				HttpRequest.cpp \
 				HttpResponse.cpp \
+				HttpUtils.cpp \
 				HttpException.cpp \
 				StatusCodes.cpp \
 				RequestHandler.cpp \
