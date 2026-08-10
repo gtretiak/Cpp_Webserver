@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 21:03:53 by nogioni-          #+#    #+#             */
-/*   Updated: 2026/08/07 01:21:57 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/10 19:07:43 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,9 @@
 #include <vector>
 #include <map>
 #include <poll.h>
+#include <signal.h>
+#include "../config/serverConfig.hpp"
+#include "../config/locationConfig.hpp"
 
 extern volatile sig_atomic_t	g_shutdown;
 
@@ -25,6 +28,7 @@ void	signalHandler(int signal);
 
 struct	globalConfig;
 class	Connection;
+class Router;
 
 class	EventLoop
 {
@@ -65,6 +69,10 @@ class	EventLoop
 		bool	validateRawBufferRequest(Connection& conn);
 		int		matchConnToServerIndex(int clientFd);
 		void	handleHttpError(int clientFd, int errorCode);
+
+		locationConfig *findBestLocation(serverConfig &server, const std::string &path);
+		bool locationMatches(const std::string &locationPath, const std::string &requestPath) const;
+		size_t getMaxBodySizeForRequest(const std::string &readBuffer, int serverIndex);
 };
 
 #endif

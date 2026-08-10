@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 21:03:51 by nogioni-          #+#    #+#             */
-/*   Updated: 2026/08/10 00:16:17 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/10 19:05:34 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -185,7 +185,10 @@ void EventLoop::acceptClient(int listenFd)
 			throw std::runtime_error("fcntl(F_SETFL) failed on client");
 		}
 
+		int server_idx = _listenFdsMAP[listenFd];
+
 		Connection conn(clientFd);
+		conn.serverIndex = server_idx;
 		_connections[clientFd] = conn;
 
 		struct pollfd pfd;
@@ -194,11 +197,38 @@ void EventLoop::acceptClient(int listenFd)
 		pfd.revents = 0;
 
 		_pollFds.push_back(pfd);
-		
-		int	server_idx = _listenFdsMAP[listenFd];
 		_listenFdsMAP.insert(std::make_pair(clientFd, server_idx));
 		std::cout << "Client connected: fd " << clientFd << ", server index: " << server_idx << std::endl;
 	}
+}
+
+bool EventLoop::locationMatches(const std::string &locationPath, const std::string &requestPath) const
+{
+	if (locationPath.empty())
+		return false;
+	if (locationPath == "/")
+		return true;
+	if (requestPath.compare(0, locationPath.size(), locationPath) != 0)
+		return false;
+	return true;
+}
+
+locationConfig *EventLoop::findBestLocation(serverConfig &server, const std::string &path)
+{
+	locationConfig *best = NULL;
+	size_t bestLen = 0;
+
+	for (size_t i = 0; i < server._locations.size(); ++i)
+	{
+		std::string locationPath = server._locations[i]._path;
+
+		if (locationMatches(locationPath, path) && locationPath.size() > bestLen)
+		{
+			best = &server._locations[i];
+			bestLen = locationPath.size();
+		}
+	}
+	return best;
 }
 
 void EventLoop::readClient(int clientFd)
@@ -233,12 +263,24 @@ void EventLoop::readClient(int clientFd)
 
 	if (isRequestComplete && conn.writeBuffer.empty())
 	{
-		std::cout << "----- RAW REQUEST from fd " << clientFd << " -----\n"
-				<< conn.readBuffer
-				<< "\n----- END REQUEST -----" << std::endl;
+		try
+		{
+			HttpParser parser;
 
-		try {
-			HttpParser	parser;
+			if (_config && conn.serverIndex >= 0 && static_cast<size_t>(conn.serverIndex) < _config->servers.size() && _config->servers[conn.serverIndex]._has_client_max_body_size)
+			{
+				parser.setMaxBodySize(_config->servers[conn.serverIndex]._client_max_body_size);
+			}
+
+			if (!parser.isRequestComplete(conn.readBuffer))
+				return;
+
+			std::cout << "----- RAW REQUEST from fd " << clientFd << " -----\n"
+					  << conn.readBuffer
+					  << "\n----- END REQUEST -----" << std::endl;
+
+			size_t consumed = parser.parseRequest(conn.readBuffer, &conn.req);
+			conn.readBuffer.erase(0, consumed);
 
 			parser.parseRequest(conn.readBuffer, &conn.req);
 
@@ -249,54 +291,45 @@ void EventLoop::readClient(int clientFd)
 			printRequest(conn.req);
 			std::cout << "\n************** printRequest() (END) **************" << std::endl;
 
-			if (conn.req.getUrl() == "/") { //VERSA0 PATH 
-				std::ostringstream	resp;
-				std::ostringstream	body;
-				std::ifstream		file("www/html/index.html");
-	
-				body << file.rdbuf();
-				std::string bodyContent = body.str();
-				std::size_t bodySize = bodyContent.size();
+			Router router;
+			router.setConfig(_config);
+			router.setConnEnv(conn);
 
-				resp << "HTTP/1.1 200 OK\r\n"
-					<< "Content-Type: text/html\r\n"
-					<< "Content-Length: " << bodySize << "\r\n"
-					<< "\r\n"
-					<< bodyContent;
-				
-				conn.writeBuffer = resp.str();
+			conn.state = RUNNING;
+
+			if (router.resolve(conn.req, conn.res) == 0)
+			{
+				_pollFds.push_back(conn.cgiData.pollFd);
+				_cgifdToPollfd[conn.cgiData.outFd] = clientFd;
+
+				writeRequestBodyToCgi(conn.req, conn.cgiData.inFd);
+				close(conn.cgiData.inFd);
+				conn.cgiData.inFd = -1;
 			}
-			else {
-				Router	router;
-				router.setConfig(_config);
-				router.setConnEnv(conn);
+			else
+			{
+				size_t bodySize = conn.res.getBody().size();
+				if (bodySize > 0)
+				{
+					std::stringstream ss;
 
-				conn.state = RUNNING;
-				
-				// 0 for cgi 1 for static
-				if (router.resolve(conn.req, conn.res) == 0) {
-					_pollFds.push_back(conn.cgiData.pollFd);//register the cgi script output fd to the pollfd vector
-					_cgifdToPollfd[conn.cgiData.outFd] = clientFd;
-
-					writeRequestBodyToCgi(conn.req, conn.cgiData.inFd);
-					close(conn.cgiData.inFd);
-					conn.cgiData.inFd = -1;
-				} else {
-					size_t	bodySize = conn.res.getBody().size();
-					if (bodySize > 0) {
-						std::stringstream	ss;
-
-						ss << bodySize;
-						if (conn.res.hasHeader("Content-Length") == false)
-							conn.res.setHeader("Content-Length", ss.str());
-					}
-					conn.writeBuffer = conn.res.toString();
+					ss << bodySize;
+					if (conn.res.hasHeader("Content-Length") == false)
+						conn.res.setHeader("Content-Length", ss.str());
 				}
+				conn.writeBuffer = conn.res.toString();
 			}
-			//printResponse(conn.res);
-			conn.shouldClose = !conn.req.hasHeader("connection") || conn.req.getHeader("connection") != "keep-alive";
+
+			conn.shouldClose = false;
+
+			if (!conn.req.hasHeader("connection") || conn.req.getHeader("connection") != "keep-alive")
+				conn.shouldClose = true;
+
+			if (conn.res.hasHeader("connection") && conn.res.getHeader("connection") == "close")
+				conn.shouldClose = true;
 		}
-		catch (const HttpException& e) {
+		catch (const HttpException &e)
+		{
 			std::cout << e.what() << std::endl;
 			std::cout << "strerror: " << strerror(errno) << std::endl;
 
@@ -304,7 +337,7 @@ void EventLoop::readClient(int clientFd)
 			handleHttpError(clientFd, e.code());
 			conn.writeBuffer = conn.res.toString();
 		}
-		//conn.shouldClose = true;
+
 		updateClientEvents(clientFd);
 	}
 }
@@ -481,6 +514,10 @@ void	EventLoop::handleHttpError( int clientFd, int errorCode ) {
 	std::string	errorPagePath;
 
 	conn.res = HttpResponse();
+	conn.res.setStatus(errorCode);
+	conn.res.setHeader("connection", "close");
+	conn.shouldClose = true;
+
 	idx = matchConnToServerIndex(clientFd);
 	std::cout << "EventLoop::handleHttpError(): clientFd = " << clientFd << ", errorCode = " << errorCode << ", server index = " << idx << std::endl;
 	if (idx == -1) {
