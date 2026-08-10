@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   HttpParser.cpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: nogioni- <nogioni-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/27 10:42:25 by gtretiak          #+#    #+#             */
-/*   Updated: 2026/08/02 20:27:48 by gtretiak         ###   ########.fr       */
+/*   Updated: 2026/08/06 16:41:38 by nogioni-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,10 +22,15 @@
 #include <iostream>
 #include "../server/Connection.hpp"
 
-static const size_t	MAX_HEADER_SIZE = 8192;//Traditional limit used by nginx, Apache, etc.
-static const size_t	MAX_BODY_SIZE = 8192;//to be fetch from config; to be removed TODO
+static const size_t	MAX_HEADER_SIZE = 8192;
+//static const size_t	MAX_BODY_SIZE = 8192;//to be fetch from config; to be removed TODO
 
-HttpParser::HttpParser() {}
+HttpParser::HttpParser() : _maxBodySize(8192) {}
+
+void HttpParser::setMaxBodySize(size_t maxBodySize)
+{
+	_maxBodySize = maxBodySize;
+}
 
 static std::string	normalize(const std::string &url) {
 	std::string	res = "/";
@@ -201,7 +206,7 @@ void	HttpParser::parseBody(std::string &buf, HttpRequest *req) {
 			throw HttpException(400, "Invalid Content-Length: non-digits presented");
 		if (len == std::numeric_limits<unsigned long>::max())
 			throw HttpException(400, "Invalid Content-Length: negative value");
-		if (static_cast<size_t>(len) > MAX_BODY_SIZE)
+		if (static_cast<size_t>(len) > _maxBodySize)
 			throw HttpException(413, "Payload Too Large");
 		if (static_cast<size_t>(len) < buf.size())
 		       throw HttpException(400, "Extra Data After Body");

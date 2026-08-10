@@ -1,7 +1,9 @@
 #include "Connection.hpp"
 
-Connection::Connection() : CgiRequestHandler() {
+Connection::Connection() : CgiRequestHandler(), matchedServer(NULL), matchedLocation(NULL)
+{
 	fd = -1;
+	serverIndex = -1;
 	readBuffer = "";
 	writeBuffer = "";
 	httpVersion = "";
@@ -13,7 +15,9 @@ Connection::Connection() : CgiRequestHandler() {
 	cgiData = CgiContext();
 }
 
-Connection::Connection(int clientFd) : CgiRequestHandler(), fd(clientFd) {
+Connection::Connection(int clientFd) : CgiRequestHandler(), fd(clientFd), matchedServer(NULL), matchedLocation(NULL)
+{
+	serverIndex = -1;
 	readBuffer = "";
 	writeBuffer = "";
 	httpVersion = "";
@@ -25,8 +29,11 @@ Connection::Connection(int clientFd) : CgiRequestHandler(), fd(clientFd) {
 	cgiData = CgiContext();
 }
 
-Connection::Connection(const Connection& other) : CgiRequestHandler(),
+Connection::Connection(const Connection& other) : CgiRequestHandler(), 
 	fd(other.fd),
+	serverIndex(other.serverIndex),
+	matchedServer(other.matchedServer),
+	matchedLocation(other.matchedLocation),
 	readBuffer(other.readBuffer),
 	writeBuffer(other.writeBuffer),
 	httpVersion(other.httpVersion),
@@ -35,11 +42,16 @@ Connection::Connection(const Connection& other) : CgiRequestHandler(),
 	lastActivity(other.lastActivity),
 	req(other.req),
 	res(other.res),
-	cgiData(other.cgiData) {}
+	state(other.state),
+	cgiData(other.cgiData)
+	{}
 
 Connection& Connection::operator=(const Connection& other) {
 	if (this != &other) {
 		fd = other.fd;
+		serverIndex = other.serverIndex;
+		matchedServer = other.matchedServer;
+		matchedLocation = other.matchedLocation;
 		readBuffer = other.readBuffer;
 		writeBuffer = other.writeBuffer;
 		httpVersion = other.httpVersion;
@@ -48,6 +60,7 @@ Connection& Connection::operator=(const Connection& other) {
 		lastActivity = other.lastActivity;
 		req = other.req;
 		res = other.res;
+		state = other.state;
 		cgiData = other.cgiData;
 	}
 	return *this;
@@ -73,6 +86,7 @@ void	writeRequestBodyToCgi( HttpRequest& req, int stdin_fd ) {
 
 void	Connection::clear() {
 	fd = -1;
+	serverIndex = -1;
 	readBuffer.clear();
 	writeBuffer.clear();
 	httpVersion.clear();
