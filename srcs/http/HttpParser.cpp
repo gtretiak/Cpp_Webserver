@@ -12,6 +12,7 @@
 
 #include "HttpRequest.hpp"
 #include "HttpParser.hpp"
+#include "HttpUtils.hpp"
 #include "HttpException.hpp"
 #include <string>
 #include <limits>
@@ -132,11 +133,11 @@ void	HttpParser::parseLine(const std::string &buf, HttpRequest *req) {
 	}
 	req->setPath(decode(req->getPath()));
 	req->setPath(normalize(req->getPath()));
-	while (buf[i] && buf[i] == ' ')
+	while (i < buf.size() && buf[i] == ' ')
 		i++;
 	if (i >= buf.size())
 		throw HttpException(400, "Bad Request");
-	while (buf[i] && buf[i] != ' ')
+	while (i < buf.size() && buf[i] != ' ')
 		req->setVersion(req->getVersion() + buf[i++]);
 	if (req->getVersion() == "HTTP/1.0")
 		req->setHeader("connection", "close");
@@ -144,13 +145,6 @@ void	HttpParser::parseLine(const std::string &buf, HttpRequest *req) {
 		req->setHeader("connection", "keep-alive");
 	else 
 		throw HttpException(505, "HTTP Version Not Supported");
-}
-
-static std::string	toLower(const std::string &key) {
-	std::string	res = key;
-	for (size_t i = 0; i < res.size(); i++)
-		res[i] = std::tolower(res[i]);
-	return (res);
 }
 
 void	HttpParser::parseHeaders(std::string &buf, HttpRequest *req) {
@@ -169,9 +163,10 @@ void	HttpParser::parseHeaders(std::string &buf, HttpRequest *req) {
 		if (column == std::string::npos)
 			throw HttpException(400, "Bad Request");
 		std::string	key = toLower(line.substr(0, column));
-		std::string	value = line.substr(column + 1);
-		while (!value.empty() && value[0] == ' ') // to remove leading spaces after column
-			value.erase(0, 1);
+		size_t	valueFirst = column + 1;
+		while (valueFirst < line.size() && line[valueFirst] == ' ') // to remove leading spaces after column
+			valueFirst++;
+		std::string	value = line.substr(valueFirst);
 		while (!value.empty() && value[value.size() - 1] == ' ') // to remove trailing spaces
 			value.erase(value.size() - 1, 1);
 		req->setHeader(key, value);
@@ -196,7 +191,7 @@ void	HttpParser::parseHeaders(std::string &buf, HttpRequest *req) {
 	}
 	if (hasTE)
 	{
-		if (req->getHeader("transfer-encoding") != "chunked")
+		if (toLower(req->getHeader("transfer-encoding")) != "chunked")
 			throw HttpException(501, "Not Implemented");
 	}	
 }
@@ -204,8 +199,12 @@ void	HttpParser::parseHeaders(std::string &buf, HttpRequest *req) {
 void	HttpParser::parseBody(std::string &buf, HttpRequest *req) {
 	if (req->hasHeader("content-length"))
 	{
-		unsigned long	len = std::strtoul(req->getHeader("content-length").c_str(), NULL, 10);
-		if (len == 0 || len == std::numeric_limits<unsigned long>::max())
+		char	*end;
+		errno = 0;
+		unsigned long	len = std::strtoul(req->getHeader("content-length").c_str(), &end, 10);
+		if (errno != 0 || *end != '\0')
+			throw HttpException(400, "Invalid Content-Length: non-digits presented");
+		if (len == std::numeric_limits<unsigned long>::max())
 			throw HttpException(400, "Invalid Content-Length: negative value");
 		if (static_cast<size_t>(len) > _maxBodySize)
 			throw HttpException(413, "Payload Too Large");
@@ -253,26 +252,29 @@ size_t	HttpParser::parseRequest(std::string &buf, HttpRequest *req) {
 	j = buf.find("\r\n\r\n");
 	if (j == std::string::npos)
 		throw HttpException(400, "Bad Request");
-	size = j + 4;
-	header = buf.substr(i + 2, j - (i + 2));
+	const size_t	headerEndLen = 4;
+	const size_t	crlfLen = 2;
+	size = j + headerEndLen;
+	header = buf.substr(i + crlfLen, j - (i + crlfLen));
 	parseHeaders(header, req);
 	if (req->hasHeader("content-length"))
 	{
 		int	len = std::atoi(req->getHeader("content-length").c_str());
-		std::string	body = buf.substr(j + 4, len);
+		std::string	body = buf.substr(j + headerEndLen, len);
 		parseBody(body, req);
 		size += len;
 	}
 	else if (req->hasHeader("transfer-encoding"))
 	{
-		size_t	bodyEnd = buf.find("0\r\n\r\n", j + 4);
+		const size_t	lastChunkLen = 5;
+		size_t	bodyEnd = buf.find("0\r\n\r\n", j + headerEndLen);
 		if (bodyEnd == std::string::npos)
 			throw HttpException(400, "Bad Request");
-		std::string	body = buf.substr(j + 4, bodyEnd - (j + 4) + 5);
-		if (bodyEnd + 5 < buf.size()) 
+		std::string	body = buf.substr(j + headerEndLen, bodyEnd - (j + headerEndLen) + lastChunkLen);
+		if (bodyEnd + lastChunkLen < buf.size()) 
 			throw HttpException(400, "Extra data after terminator");
 		parseBody(body, req);
-		size = bodyEnd + 5;
+		size = bodyEnd + lastChunkLen;
 	}
 	return (size);
 }
@@ -287,9 +289,10 @@ bool	HttpParser::isRequestComplete(const std::string &buf) const {
 		return (false);
 	std::string	lowLnH = toLower(LnH);
 	size_t	clPos = lowLnH.find("content-length:");
+	const size_t	clStrLength = 15;
 	if (clPos != std::string::npos) // content-length presented
 	{
-		size_t	start = clPos + 15;
+		size_t	start = clPos + clStrLength;
 		while (start < LnH.size() && LnH[start] == ' ')
 			start++;
 		size_t	end = start;

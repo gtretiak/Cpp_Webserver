@@ -1,5 +1,6 @@
 #include "HttpResponse.hpp"
 #include "HttpException.hpp"
+#include "HttpUtils.hpp"
 #include "StatusCodes.hpp"
 #include <string>
 #include <sstream>
@@ -7,8 +8,7 @@
 #include <cctype>
 #include <iomanip>
 #include <map>
-//#include <ctime>//time_t, time(), gmtime()
-
+/*#include <ctime>//time_t, time(), gmtime()
 static std::string	getCurrentDate() {
 	std::time_t	now = std::time(NULL);
 	std::tm		*timeinfo = std::gmtime(&now);
@@ -19,15 +19,15 @@ static std::string	getCurrentDate() {
 	if (std::strftime(buf, sizeof(buf), "%a, %d %b %Y %H:%M:%S GMT", timeinfo) == 0)
 		return ("Thu, 01 Jan 1970 00:00:00 GMT");
 	return (std::string(buf));
-}
+}*/
 
 HttpResponse::HttpResponse() : version_("HTTP/1.1"), statusCode_(200),	statusText_(StatusCodes::getStatus(200)), has_status_(false) {
-	date_ = getCurrentDate();
+//	date_ = getCurrentDate();TODO date remove or leave commented - forbidden
 	//this->setHeader("server", "Our Server");
 }
 
 HttpResponse::HttpResponse(const std::string &serverName) : version_("HTTP/1.1"), serverName_(serverName), statusCode_(200), statusText_(StatusCodes::getStatus(200)), has_status_(false) {
-	date_ = getCurrentDate();
+//	date_ = getCurrentDate();TODO date remove or leave commented - forbidden
 	//this->setHeader("server", serverName_);
 }
 
@@ -38,7 +38,7 @@ HttpResponse&	HttpResponse::operator=(const HttpResponse &other) {
 		statusCode_ = other.statusCode_;
 		statusText_ = other.statusText_;
 		body_ = other.body_;
-		date_ = other.date_;
+//		date_ = other.date_;date remove or keep commented TODO
 		headers_ = other.headers_;
 		has_status_ = other.has_status_;
 	}
@@ -57,7 +57,6 @@ std::string	HttpResponse::toString() const {
 	}
 	ss << "\r\n";
 	if (!this->body_.empty())
-	{
 		ss << this->body_;
 	}
 	return (ss.str());
@@ -98,14 +97,6 @@ void	HttpResponse::setBody(const std::string &b) {//MAYBE NOT SET CONTENT HERE
 		ss << 0;
 	this->setHeader("content-length", ss.str());
 }
-static std::string	toLower(const std::string &key) {
-	std::string	res = key;
-
-	for (size_t i = 0; i < res.size(); i++)
-		res[i] = static_cast<char>(std::tolower(static_cast<unsigned char>(res[i])));
-	return (res);
-}
-
 void	HttpResponse::setHeader(const std::string &k, const std::string &v) {
 	std::string	lowKey = toLower(k);
 	if (lowKey == "content-length" || lowKey == "content-type" || lowKey == "date" || lowKey == "server" || lowKey == "location")
@@ -135,7 +126,7 @@ const std::string	HttpResponse::getVersion( ) const {
 	return version_;
 }
 
-const std::string	HttpResponse::getBody( ) const {
+const std::string	HttpResponse::getBody() const {
 	if (body_.empty())
 		return "";
 	return body_;
@@ -179,13 +170,13 @@ void	HttpResponse::generateErrorPageResponse( const char *filepath ) {
 		buffer[sizeof(buffer) - 1] = '\0';
 		this->body_ += buffer;
 	}
-	std::cout << "****** debug: generateErrorPageResponse: body = " << this->body_ << std::endl;
+//	std::cout << "****** debug: generateErrorPageResponse: body = " << this->body_ << std::endl;TODO - remove before submitting
 	std::ostringstream	ss;
 	ss << this->body_.length();
+	delete[] buffer;
 	this->setVersion("HTTP/1.1");
 	this->setHeader("Content-Length", ss.str());
 	this->setHeader("Content-Type", "text/html");
-	delete[] buffer;
 	close(fd);
 */
 

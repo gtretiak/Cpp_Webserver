@@ -53,7 +53,7 @@ typedef struct CgiContext {
 }	CgiContext;
 
 
-struct Connection : public CgiRequestHandler {
+class	Connection : public CgiRequestHandler {
 	int	fd;						// client fd
 	int	serverIndex;
 	serverConfig	*matchedServer;
@@ -65,7 +65,7 @@ struct Connection : public CgiRequestHandler {
 	bool		shouldClose;	// marks connection to close after writing
 	time_t		lastActivity;	// used later to timeout
 
-	HttpRequest		req;
+	HttpRequest	req;
 	HttpResponse	res;
 
 	ConnectionState	state;		// current state of the connection
