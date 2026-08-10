@@ -110,6 +110,41 @@
         .content p {
             margin: 15px 0;
         }
+
+        .page-links {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin: 0 0 40px;
+        }
+
+        .page-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 140px;
+            padding: 14px 22px;
+            border-radius: 999px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.4px;
+            color: white;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 10px 24px rgba(102, 126, 234, 0.28);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+        }
+
+        .page-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 30px rgba(102, 126, 234, 0.36);
+            opacity: 0.96;
+        }
+
+        .page-link:active {
+            transform: translateY(0);
+        }
         
         /* Quote Section */
         .quote-section {
@@ -247,6 +282,12 @@
         <div class="content">
             <p>This is our main page with a great team behind it.</p>
             <p>Enjoy your visit!</p>
+        </div>
+
+        <div class="page-links" aria-label="Page navigation">
+            <a class="page-link" href="cgi.html">CGI</a>
+            <a class="page-link" href="download.html">Download</a>
+            <a class="page-link" href="upload.html">Upload</a>
         </div>
         
         <!-- Quote Section - Hidden by default -->

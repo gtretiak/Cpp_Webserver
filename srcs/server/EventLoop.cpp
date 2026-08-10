@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 21:03:51 by nogioni-          #+#    #+#             */
-/*   Updated: 2026/08/08 00:41:11 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/10 00:16:17 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -486,26 +486,22 @@ void	EventLoop::handleHttpError( int clientFd, int errorCode ) {
 	if (idx == -1) {
 		//error, because clientFd do not match any server
 		//generate internal server error 500
+		//means that we not have any root or error_page directive to generate the error page
 		std::cout << "******** Error(handleHttpError): client does not match any server *********" << std::endl;
-
-		errorPagePath = "www/html/error_pages/500.html";
 		conn.res.setStatus(500);
-		conn.res.generateErrorPageResponse(errorPagePath.c_str(), 500);
-		
+		conn.res.generateErrorPageResponse(NULL, 500);
+		return ;
 	}
 	if (_config->servers[idx]._error_pages.empty()) {
-		std::cout << "********** Error page generated from default **********" << std::endl;
-	
-		errorPagePath = "www/html/error_pages/" + ft_int_to_string(errorCode) + ".html";
+		std::cout << "********** (handleHttpError): server does not have any error_page directive configured **********" << std::endl;
 		conn.res.setStatus(errorCode);
-		conn.res.generateErrorPageResponse(errorPagePath.c_str(), errorCode);
-		// solve default by search e.code + html in root + error pages folder
+		conn.res.generateErrorPageResponse(NULL, errorCode);
 	}
 	else {
 		std::map<int, std::string>::iterator	it;
 
 		it = _config->servers[idx]._error_pages.find(errorCode);
-		if (it != _config->servers[idx]._error_pages.end()) {//find in error_page directive
+		if (it != _config->servers[idx]._error_pages.end()) {//find error_page directive
 			std::cout << "********** Error page generated from config file **********" << std::endl;
 			//it->second is the path to error page
 			std::string	filepath = _config->servers[idx]._root + it->second;
@@ -517,9 +513,8 @@ void	EventLoop::handleHttpError( int clientFd, int errorCode ) {
 			std::cout << "********** Error page generated from config file (END) **********" << std::endl;
 		}
 		else { //do not find the error code among the error_pages configured
-			errorPagePath = _config->servers[idx]._root + "/error_pages/" + ft_int_to_string(errorCode) + ".html";
 			conn.res.setStatus(errorCode);
-			conn.res.generateErrorPageResponse(errorPagePath.c_str(), errorCode);
+			conn.res.generateErrorPageResponse(NULL, errorCode);
 		}
 	}
 }
