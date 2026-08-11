@@ -46,7 +46,6 @@ std::string	HttpResponse::toString() const {
 	ss << "\r\n";
 	if (!this->body_.empty())
 		ss << this->body_;
-	}
 	return (ss.str());
 }
 void	HttpResponse::setVersion(const std::string &v) {
@@ -170,5 +169,4 @@ void	HttpResponse::generateErrorPageResponse( const char *filepath, int errorCod
 	if (!this->hasHeader("content-type"))
 		this->setHeader("Content-Type", "text/html");
 	close(fd);
-*/
-
+}
