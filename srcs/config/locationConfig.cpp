@@ -28,9 +28,9 @@ locationConfig::locationConfig()
 	  _directives(),
 	  _return(),
 	  _has_return(false),
-	  upload_store(),
 	  _cgi(),
-	  _has_cgi(false)
+	  _has_cgi(false),
+	  upload_store()
 {
 }
 
@@ -49,9 +49,9 @@ locationConfig::locationConfig(const locationConfig &other)
 	  _directives(other._directives),
 	  _return(other._return),
 	  _has_return(other._has_return),
-	  upload_store(other.upload_store),
 	  _cgi(other._cgi),
-	  _has_cgi(other._has_cgi)
+	  _has_cgi(other._has_cgi),
+	  upload_store(other.upload_store)
 {
 }
 
@@ -71,9 +71,9 @@ locationConfig& locationConfig::operator=(const locationConfig& other) {
 		_directives = other._directives;
 		_return = other._return;
 		_has_return = other._has_return;
-		upload_store = other.upload_store;
 		_cgi = other._cgi;
 		_has_cgi = other._has_cgi;
+		upload_store = other.upload_store;
 	}
 	return *this;
 }

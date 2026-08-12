@@ -8,18 +8,6 @@
 #include <cctype>
 #include <iomanip>
 #include <map>
-/*#include <ctime>//time_t, time(), gmtime()
-static std::string	getCurrentDate() {
-	std::time_t	now = std::time(NULL);
-	std::tm		*timeinfo = std::gmtime(&now);
-	char		buf[100];
-
-	if (!timeinfo)
-		return ("Thu, 01 Jan 1970 00:00:00 GMT");
-	if (std::strftime(buf, sizeof(buf), "%a, %d %b %Y %H:%M:%S GMT", timeinfo) == 0)
-		return ("Thu, 01 Jan 1970 00:00:00 GMT");
-	return (std::string(buf));
-}*/
 
 HttpResponse::HttpResponse() : version_("HTTP/1.1"), statusCode_(200),	statusText_(StatusCodes::getStatus(200)), has_status_(false) {
 //	date_ = getCurrentDate();TODO date remove or leave commented - forbidden
@@ -58,7 +46,6 @@ std::string	HttpResponse::toString() const {
 	ss << "\r\n";
 	if (!this->body_.empty())
 		ss << this->body_;
-	}
 	return (ss.str());
 }
 void	HttpResponse::setVersion(const std::string &v) {
@@ -139,44 +126,47 @@ bool	HttpResponse::hasHeader(const std::string &k) const {
 
 HttpResponse::~HttpResponse() {}
 
-void	HttpResponse::generateErrorPageResponse( const char *filepath ) {
-	// char	*buffer = new char[4096];
-	char buffer[4096];
-	int		fd = open(filepath, O_RDONLY);
-	// [nay added]
-	ssize_t bytesRead;
+void	HttpResponse::generateErrorPageResponse( const char *filepath, int errorCode ) {
+	std::ostringstream	ss;
+	std::string			errorPage;
+	int					fd;
 
-	this->body_.clear();
-	if (fd < 0)
-		throw HttpException(500, "Could not open error page");
+	//check if the file exists and is readable
+	if (filepath == NULL || access(filepath, F_OK | R_OK) == -1)
+	{
+		errorPage = createPrettyErrorPage(errorCode);
+		this->setBody(errorPage);
+		this->setVersion("HTTP/1.1");
+		if (!this->hasHeader("content-type"))
+			this->setHeader("Content-Type", "text/html");
+		return ;
+	}
+	fd = open(filepath, O_RDONLY);
+	//in case open fails, generate a default error page
+	if (fd == -1)
+	{
+		errorPage = createPrettyErrorPage(errorCode);
+		this->setBody(errorPage);
+		this->setVersion("HTTP/1.1");
+		if (!this->hasHeader("content-type"))
+			this->setHeader("Content-Type", "text/html");
+		return ;
+	}
 
-	while ((bytesRead = read(fd, buffer, sizeof(buffer))) > 0)
+	char	buffer[4096];
+	ssize_t	bytesRead;
+	std::cout << "****** REMOVE ME LATER debug: generateErrorPageResponse: filepath = " << filepath << std::endl;
+	//read file into buffer and append to body_
+	while ((bytesRead = read(fd, buffer, sizeof(buffer) - 1)) > 0) {
+		buffer[bytesRead] = '\0';
 		this->body_.append(buffer, bytesRead);
-	close(fd);
-	if (bytesRead < 0)
-		throw HttpException(500, "Could not read error page");
-
-	std::ostringstream ss;
+	}
+	std::cout << "****** REMOVE ME LATER debug: generateErrorPageResponse: body = " << this->body_ << std::endl;
 	ss << this->body_.length();
 	this->setVersion("HTTP/1.1");
 	if (!this->hasHeader("content-length"))
 		this->setHeader("Content-Length", ss.str());
 	if (!this->hasHeader("content-type"))
 		this->setHeader("Content-Type", "text/html");
-}
-/*
-	std::cout << "****** debug: generateErrorPageResponse: filepath = " << filepath << std::endl;
-	while (read(fd, buffer, sizeof(buffer) - 1) != 0) {
-		buffer[sizeof(buffer) - 1] = '\0';
-		this->body_ += buffer;
-	}
-//	std::cout << "****** debug: generateErrorPageResponse: body = " << this->body_ << std::endl;TODO - remove before submitting
-	std::ostringstream	ss;
-	ss << this->body_.length();
-	delete[] buffer;
-	this->setVersion("HTTP/1.1");
-	this->setHeader("Content-Length", ss.str());
-	this->setHeader("Content-Type", "text/html");
 	close(fd);
-*/
-
+}

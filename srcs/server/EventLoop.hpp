@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   EventLoop.hpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nogioni- <nogioni-@student.42.fr>          +#+  +:+       +#+        */
+/*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 21:03:53 by nogioni-          #+#    #+#             */
-/*   Updated: 2026/08/06 17:08:21 by nogioni-         ###   ########.fr       */
+/*   Updated: 2026/08/10 19:07:43 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,6 +66,7 @@ class	EventLoop
 		void	removeFdFromPollFds(int fd); //removes a fd from the pollfd vector, used when closing a client or cgi script
 		void	continueCgi(int pipeFd);
 
+		bool	validateRawBufferRequest(Connection& conn);
 		int		matchConnToServerIndex(int clientFd);
 		void	handleHttpError(int clientFd, int errorCode);
 

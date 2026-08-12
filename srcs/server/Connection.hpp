@@ -53,7 +53,7 @@ typedef struct CgiContext {
 }	CgiContext;
 
 
-class	Connection : public CgiRequestHandler {
+struct	Connection : public CgiRequestHandler {
 	int	fd;						// client fd
 	int	serverIndex;
 	serverConfig	*matchedServer;

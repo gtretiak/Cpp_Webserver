@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   HttpParser.cpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nogioni- <nogioni-@student.42.fr>          +#+  +:+       +#+        */
+/*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/27 10:42:25 by gtretiak          #+#    #+#             */
-/*   Updated: 2026/08/06 16:41:38 by nogioni-         ###   ########.fr       */
+/*   Updated: 2026/08/10 19:07:20 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,7 @@
 #include <cstdlib>
 #include <vector>
 #include <iostream>
+#include <errno.h>
 #include "../server/Connection.hpp"
 
 static const size_t	MAX_HEADER_SIZE = 8192;

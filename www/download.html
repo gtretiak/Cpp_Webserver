@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Download / Delete test</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<h1>Download / Delete test</h1>
+<p><a href="/html/index.html">&larr; back to home</a></p>
+
+<p>There's no directory listing yet, so type the exact path of the file you
+want (e.g. the path from the "location" header you got back after an
+upload, like <code>/uploads/file_1</code>).</p>
+
+<div class="field">
+  <label>File path:</label>
+  <input type="text" id="filePath" value="/uploads/file_1">
+</div>
+
+<button onclick="doDownload()">Open / Download</button>
+<button onclick="doDelete()">Delete (DELETE method)</button>
+
+<h3>Result</h3>
+<pre id="downloadResult">(nothing yet)</pre>
+
+<script>
+function doDownload() {
+  const path = document.getElementById('filePath').value.trim();
+  if (!path) return;
+  window.open(path, '_blank');
+}
+
+async function doDelete() {
+  const path = document.getElementById('filePath').value.trim();
+  const out = document.getElementById('downloadResult');
+  if (!path) { out.textContent = 'Type a path first.'; return; }
+  try {
+    const res = await fetch(path, { method: 'DELETE' });
+    const text = await res.text();
+    let headers = '';
+    res.headers.forEach((v, k) => { headers += k + ': ' + v + '\n'; });
+    out.textContent =
+      'Status: ' + res.status + ' ' + res.statusText + '\n\n' +
+      headers + '\n' +
+      'Body:\n' + text;
+  } catch (err) {
+    out.textContent = 'Request failed: ' + err;
+  }
+}
+</script>
+</body>
+</html>
