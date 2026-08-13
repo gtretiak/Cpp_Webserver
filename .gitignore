@@ -1,3 +1,2 @@
 *.o
-cgi_tester
-tester
+run
