@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   CgiRequestHandler_config.cpp                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: dopereir <dopereir@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 17:54:34 by dopereir          #+#    #+#             */
-/*   Updated: 2026/06/12 15:26:42 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/13 18:49:49 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -196,12 +196,12 @@ void	CgiRequestHandler::extractMetaVars( HttpRequest& req ) {
 	getConfigSettings( req );
 	insertStaticMetaVars( );
 	tmp_url = req.getUrl();
-	_meta_vars["REQUEST-METHOD"] = req.getMethod();		//mandatory in Request Line
-	_meta_vars["SCRIPT-NAME"] = getScriptName(tmp_url);	//mandatory in Request Line
-	_meta_vars["QUERY-STRING"] = req.getQuery();		//if available, else ""
-	_meta_vars["SERVER-PROTOCOL"] = req.getVersion();	//mandatory in Request Line
-	_meta_vars["PATH-INFO"] = getPathInfo( tmp_url );
-	_meta_vars["PATH-TRANSLATED"] = getPathTranslated();
+	_meta_vars["REQUEST_METHOD"] = req.getMethod();		//mandatory in Request Line
+	_meta_vars["SCRIPT_NAME"] = getScriptName(tmp_url);	//mandatory in Request Line
+	_meta_vars["QUERY_STRING"] = req.getQuery();		//if available, else ""
+	_meta_vars["SERVER_PROTOCOL"] = req.getVersion();	//mandatory in Request Line
+	_meta_vars["PATH_INFO"] = getPathInfo( tmp_url );
+	_meta_vars["PATH_TRANSLATED"] = getPathTranslated();
 	for (; it != _CgiMetaVarsList.end(); ++it) {
 		if (req.hasHeader(*it)) {
 			std::string	key = *it;
