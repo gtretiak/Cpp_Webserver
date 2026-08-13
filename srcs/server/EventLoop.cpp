@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   EventLoop.cpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: nogioni- <nogioni-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 21:03:51 by nogioni-          #+#    #+#             */
-/*   Updated: 2026/08/12 22:15:11 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/13 18:57:24 by nogioni-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -177,14 +177,7 @@ void EventLoop::acceptClient(int listenFd)
 			throw std::runtime_error("accept() failed");
 		}
 
-		int flags = fcntl(clientFd, F_GETFL, 0);
-		if (flags == -1)
-		{
-			close(clientFd);
-			throw std::runtime_error("fcntl(F_GETFL) failed on client");
-		}
-
-		if (fcntl(clientFd, F_SETFL, flags | O_NONBLOCK) == -1)
+		if (fcntl(clientFd, F_SETFL, O_NONBLOCK) == -1)
 		{
 			close(clientFd);
 			throw std::runtime_error("fcntl(F_SETFL) failed on client");

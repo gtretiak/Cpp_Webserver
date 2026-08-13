@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Socket.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: nogioni- <nogioni-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 20:19:23 by nogioni-          #+#    #+#             */
-/*   Updated: 2026/08/11 22:06:23 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/13 18:56:40 by nogioni-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -269,18 +269,7 @@ void	Socket::closeSocket(int fd)
 
 void	Socket::setNonBlocking(int fd)
 {
-	int flags;
-
-	//F_GETFL: get the actual flags
-	flags = fcntl(fd, F_GETFL, 0);
-	if (flags == -1)
-	{
-		closeSocket();
-		throw std::runtime_error("fcntl(F_GETFL) failed");
-	}
-
-	//F_SETFL: take the actual flags and adds O_NONBLOCK
-	if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1)
+	if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1)
 	{
 		closeSocket();
 		throw std::runtime_error("fcntl(F_SETFL) failed");
