@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 21:25:16 by nogioni-          #+#    #+#             */
-/*   Updated: 2026/07/05 20:09:21 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/12 21:51:05 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 #include "../config/locationConfig.hpp"
 #include "../config/globalConfig.hpp"
 #include "EventLoop.hpp"
+#include <errno.h>
 
 Server::Server() :	_socket(), _eventLoop()
 {}
@@ -51,7 +52,13 @@ void	Server::setup( Listen target, int server_idx ) {
 
 void Server::run(globalConfig& config)
 {
-	_eventLoop->run(config);
+	try {
+		_eventLoop->run(config);
+	}
+	catch (const std::exception& e) {
+		std::cerr << "Fatal Error (Server::run) Server.cpp:58 : " << e.what() << std::endl;
+		std::cout << strerror(errno) << std::endl;
+	}
 }
 
 void Server::stop()

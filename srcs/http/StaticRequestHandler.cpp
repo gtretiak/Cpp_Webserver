@@ -146,6 +146,20 @@ std::string StaticRequestHandler::resolveIndexFile(const std::string &dirPath) c
 	else if (_server && !_server->_index.empty())
 		indexes = &_server->_index;
 
+	if (indexes != NULL) {
+		std::cout << "StaticRequestHandler::resolveIndexFile(): Using index files from " << (_location ? "location" : "server") << std::endl;
+		std::cout << "Configured index files: ";
+		for (size_t i = 0; i < indexes->size(); ++i)
+		{
+			std::cout << (*indexes)[i];
+			if (i < indexes->size() - 1)
+				std::cout << ", ";
+		}
+	}
+
+	else
+		std::cout << "StaticRequestHandler::resolveIndexFile(): No index files configured" << std::endl;
+
 	if (indexes == NULL)
 		return "";
 
@@ -215,10 +229,13 @@ std::string StaticRequestHandler::generateAutoindexPage(const std::string &reque
 void	StaticRequestHandler::handleRequest(HttpRequest &req, HttpResponse &res) {
 	std::string	path = req.getPath();
 	std::string	method = req.getMethod();
+
 	if (method != "GET" && method != "POST" && method != "DELETE")
 		throw HttpException(405, "Method Not Allowed: " + method);
+	
 	std::string	extension = "UnknownByDefault";
 	size_t	dotPos = path.find_last_of('.');
+
 	if (dotPos != std::string::npos)
 		extension = path.substr(dotPos);
 	std::string	type = MimeTypes::getMimeType(extension);

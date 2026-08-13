@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 20:19:23 by nogioni-          #+#    #+#             */
-/*   Updated: 2026/06/21 14:44:05 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/11 22:06:23 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -77,7 +77,7 @@ void	Socket::setIpHostPortConn( Listen target, Listen::listenType type ) {
 	int					opt = 1;
 
 	std::memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_UNSPEC;
+	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
 	if (type == Listen::IP_PORT)
 		hints.ai_flags = AI_NUMERICHOST | AI_NUMERICSERV;
@@ -91,6 +91,8 @@ void	Socket::setIpHostPortConn( Listen target, Listen::listenType type ) {
 	//IF AI_NUMERICHOST is set, the node must be numerical network address, useful for ip + port branch
 	//service sets the port
 	//if AI_NUMERICSERV is set the service must point to a string containing a numeric port number
+	if (target.addr == "*")
+		target.addr = "0.0.0.0";
 	rc = getaddrinfo(target.addr.c_str(), portstr.c_str(), &hints, &res);
 	if (rc != 0) {
 		throw std::runtime_error(std::string("Error: setIpHostPortConn: getaddrinfo failed") + gai_strerror(rc));
@@ -114,6 +116,10 @@ void	Socket::setIpHostPortConn( Listen target, Listen::listenType type ) {
 				_fd = fd;
 				break;
 			}
+		}
+		else {
+			std::cout << strerror(errno) << " : " << errno << std::endl;
+			std::cout << "bind failed for address: " << target.addr << " port: " << target.port << std::endl;
 		}
 		closeSocket(fd);
 	}

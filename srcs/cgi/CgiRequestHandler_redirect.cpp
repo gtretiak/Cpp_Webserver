@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 14:17:59 by dopereir          #+#    #+#             */
-/*   Updated: 2026/07/02 22:52:03 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/10 22:56:17 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -91,8 +91,9 @@ HttpRequest	CgiRequestHandler::processLocalRedir( HttpResponse& res) {
 void	CgiRequestHandler::processClientRedir( HttpResponse& res ) {
 	res.setVersion("HTTP/1.1");
 	res.setHeader("status", "302");
-	res.setHeader("content-length", "0");
 	res.setBody("");
+	if (res.hasHeader("content-length") == false)
+		res.setHeader("content-length", "0");
 }
 
 void	CgiRequestHandler::processClientRedirWithDocument( HttpResponse& res ) {
