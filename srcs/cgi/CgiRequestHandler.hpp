@@ -30,7 +30,7 @@
 #include <set>
 
 class	Router;
-class	Connection;
+struct	Connection;
 
 typedef struct	s_ctx_exec {
 	std::string	execRoot;

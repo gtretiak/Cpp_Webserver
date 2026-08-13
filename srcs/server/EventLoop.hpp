@@ -27,7 +27,7 @@ extern volatile sig_atomic_t	g_shutdown;
 void	signalHandler(int signal);
 
 struct	globalConfig;
-class	Connection;
+struct	Connection;
 class Router;
 
 class	EventLoop

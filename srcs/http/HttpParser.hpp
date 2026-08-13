@@ -15,7 +15,7 @@
 
 #include <string>
 
-class	Connection;
+struct	Connection;
 class	HttpRequest;
 
 class	HttpParser {
