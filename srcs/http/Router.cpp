@@ -95,6 +95,8 @@ int Router::applyReturnDirective(serverConfig *server, locationConfig *location,
 	int code = returnMap->begin()->first;
 	std::string value = returnMap->begin()->second;
 
+	std::cout << "******** Router::applyReturnDirective(): Applying return directive: code = " << code << ", value = " << value << std::endl;
+
 	res.setStatus(code);
 	res.setHeader("connection", "close");
 
@@ -129,8 +131,10 @@ int Router::resolve(HttpRequest &req, HttpResponse &res)
 	else
 		std::cout << " **** RESOLVE(): no matching location" << std::endl;
 
-	if (hasReturnDirective(server, location))
+	if (hasReturnDirective(server, location)) {
+		std::cout << " **** RESOLVE(): return directive found, applying return directive" << std::endl;
 		return applyReturnDirective(server, location, res);
+	}
 
 	if (target.find("/cgi-bin") != std::string::npos)
 	{

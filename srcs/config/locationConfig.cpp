@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   locationConfig.cpp                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nogioni- <nogioni-@student.42.fr>          +#+  +:+       +#+        */
+/*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/28 23:24:56 by dopereir          #+#    #+#             */
-/*   Updated: 2026/07/21 15:41:41 by nogioni-         ###   ########.fr       */
+/*   Updated: 2026/08/10 19:46:15 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,8 +31,7 @@ locationConfig::locationConfig()
 	  _cgi(),
 	  _has_cgi(false),
 	  upload_store()
-{
-}
+{}
 
 locationConfig::locationConfig(const locationConfig &other)
 	: _path(other._path),
@@ -52,8 +51,7 @@ locationConfig::locationConfig(const locationConfig &other)
 	  _cgi(other._cgi),
 	  _has_cgi(other._has_cgi),
 	  upload_store(other.upload_store)
-{
-}
+{}
 
 locationConfig& locationConfig::operator=(const locationConfig& other) {
 	if (this != &other) {

@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 18:13:28 by dopereir          #+#    #+#             */
-/*   Updated: 2026/07/05 20:12:13 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/11 21:52:12 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,6 +26,7 @@ void	globalConfig::initServerRoutine(Server& webserv,
 		for (size_t	i = 0; i < it->_listens.size(); i++) {
 			std::cout << "Setting up listen[" << i << "]"
 			<< "for server nº " << server_idx
+			<< "\t(" << it->_listens[i].addr << ":" << it->_listens[i].port << ")" << "type: " << it->_listens[i].type
 			<< std::endl;
 			webserv.setup(it->_listens[i], server_idx);
 		}

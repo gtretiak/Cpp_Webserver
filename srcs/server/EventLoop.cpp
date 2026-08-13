@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 21:03:51 by nogioni-          #+#    #+#             */
-/*   Updated: 2026/08/10 19:05:34 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/12 22:15:11 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -102,43 +102,48 @@ void EventLoop::run(globalConfig& config)
 
 		//iterates backards bacause closeClient() might remove elements from the array
 		for (int i = static_cast<int>(_pollFds.size()) - 1; i >= 0; --i)
-		{
-			int		fd = _pollFds[i].fd;
-			short	revents = _pollFds[i].revents;
+		{ //wrap a try block here?
+			try {
+				int		fd = _pollFds[i].fd;
+				short	revents = _pollFds[i].revents;
 
-			if (revents == 0)
-				continue;
+				if (revents == 0)
+					continue;
 
-			if (revents & (POLLERR | POLLHUP | POLLNVAL))
-			{
-				if (_cgifdToPollfd.count(fd)) { //cgi fd trigged, redirections case
-					std::cout << "\n\n\nCGI POLLHUP FOR FD: "<< fd << "\n\n\n" << std::endl;
-					continueCgi(fd);
+				if (revents & (POLLERR | POLLHUP | POLLNVAL))
+				{
+					if (_cgifdToPollfd.count(fd)) { //cgi fd trigged, redirections case
+						std::cout << "\n\n\nCGI POLLHUP FOR FD: "<< fd << "\n\n\n" << std::endl;
+						continueCgi(fd);
+						continue;
+					}
+					if (!isListenFd(fd)) {
+						//std::cout << "\n\n\nCLOSE CLIENT - 1\n\n\n" << std::endl;
+						closeClient(fd);
+					}
 					continue;
 				}
-				if (!isListenFd(fd)) {
-					std::cout << "\n\n\nCLOSE CLIENT - 1\n\n\n" << std::endl;
-					closeClient(fd);
-				}
-				continue;
-			}
 
-			if ((revents & POLLIN) && isListenFd(fd))
-				acceptClient(fd);
-			else
-			{
-				if (revents & POLLIN) {
-					if (_cgifdToPollfd.count(fd)) {//cgi fd trigged
-						std::cout << "\n\n\nCGI POLLIN\n\n\n" << std::endl;
-						continueCgi(fd);
+				if ((revents & POLLIN) && isListenFd(fd))
+					acceptClient(fd);
+				else
+				{
+					if (revents & POLLIN) {
+						if (_cgifdToPollfd.count(fd)) {//cgi fd trigged
+							std::cout << "\n\n\nCGI POLLIN\n\n\n" << std::endl;
+							continueCgi(fd);
+						}
+						else //non cgi fd trigged
+							readClient(fd);
 					}
-					else //non cgi fd trigged
-						readClient(fd);
+					if (revents & POLLOUT) {
+						std::cout << "EventLoop::run(): POLLOUT triggered for fd " << fd << std::endl;
+						writeClient(fd);
+					}
 				}
-				if (revents & POLLOUT) {
-					std::cout << "EventLoop::run(): POLLOUT triggered for fd " << fd << std::endl;
-					writeClient(fd);
-				}
+			} catch (const std::exception& e) {
+				std::cerr << "Error in EventLoop::run(): " << e.what() << std::endl;
+				std::cerr << "strerror: " << strerror(errno) << std::endl;
 			}
 		}
 	}
@@ -247,7 +252,7 @@ void EventLoop::readClient(int clientFd)
 	}
 	else if (bytes == 0)
 	{
-		std::cout << "\n\n\nCLOSE CLIENT 2\n\n\n" << std::endl;
+		//std::cout << "\n\n\nCLOSE CLIENT 2\n\n\n" << std::endl;
 		closeClient(clientFd);
 		return;
 	}
@@ -282,13 +287,8 @@ void EventLoop::readClient(int clientFd)
 			size_t consumed = parser.parseRequest(conn.readBuffer, &conn.req);
 			conn.readBuffer.erase(0, consumed);
 
-			parser.parseRequest(conn.readBuffer, &conn.req);
-
-			//erases only the number of bytes readed. body + headers + \r\n\r\n
-			conn.readBuffer.erase(0, conn.req.getBody().size() + conn.readBuffer.find("\r\n\r\n") + 4);
-			
 			std::cout << "\n************** printRequest() **************" << std::endl;
-			printRequest(conn.req);
+			//printRequest(conn.req);
 			std::cout << "\n************** printRequest() (END) **************" << std::endl;
 
 			Router router;
@@ -356,7 +356,7 @@ void EventLoop::writeClient(int clientFd)
 
 	if (sent > 0)
 	{
-		std::cout << "\n\n************** Sent " << sent << " bytes to client fd " << clientFd << std::endl;
+		//std::cout << "\n\n************** Sent " << sent << " bytes to client fd " << clientFd << std::endl;
 		/*std::cout << "----- DEBUG RAW RESPONSE sent to fd " << clientFd << " -----\n"
 				<< conn.writeBuffer.c_str()
 				<< "$\n----- DEBUG END RESPONSE -----" << std::endl;*/
@@ -366,7 +366,7 @@ void EventLoop::writeClient(int clientFd)
 	else if (sent == -1)
 	{
 		//no need to check for EAGAIN or EWOULDBLOCK, because POLLOUT guaratees the socket availability to write, so if send() returns -1, it is a real error
-		std::cout << "\n\n\nCLOSE CLIENT 4\n\n\n" << std::endl;
+		//std::cout << "\n\n\nCLOSE CLIENT 4\n\n\n" << std::endl;
 		closeClient(clientFd);
 		return;
 	}
@@ -375,7 +375,7 @@ void EventLoop::writeClient(int clientFd)
 	{
 		if (conn.shouldClose || !conn.keepAlive)//
 		{
-			std::cout << "\n\n\nCLOSE CLIENT 5\n\n\n" << std::endl;
+			//std::cout << "\n\n\nCLOSE CLIENT 5\n\n\n" << std::endl;
 			closeClient(clientFd);
 		}
 		else {
@@ -401,7 +401,7 @@ void EventLoop::closeClient(int clientFd)
 		}
 	}
 
-	std::cout << "Client closed: fd " << clientFd << std::endl;
+	//std::cout << "Client closed: fd " << clientFd << std::endl;
 }
 
 void EventLoop::updateClientEvents(int clientFd)

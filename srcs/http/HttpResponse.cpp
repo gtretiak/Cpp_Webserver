@@ -33,7 +33,8 @@ HttpResponse&	HttpResponse::operator=(const HttpResponse &other) {
 	return *this;
 }
 
-std::string	HttpResponse::toString() const {
+std::string	HttpResponse::toString() const
+{
 	std::ostringstream	ss;
 
 	ss << this->version_ << " " << this->statusCode_ << " ";
@@ -170,3 +171,4 @@ void	HttpResponse::generateErrorPageResponse( const char *filepath, int errorCod
 		this->setHeader("Content-Type", "text/html");
 	close(fd);
 }
+

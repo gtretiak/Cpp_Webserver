@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/09 18:19:23 by dopereir          #+#    #+#             */
-/*   Updated: 2026/07/16 00:11:20 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/10 23:01:32 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -188,7 +188,7 @@ void	CgiRequestHandler::handleRequest(Connection& conn) {
 void	CgiRequestHandler::handleRequest( HttpRequest &req, HttpResponse &res ) {
 	(void)req;
 	(void)res;
-	std::cout << "CgiRequestHandler::handleRequest virtual function called IGNORE" << std::endl;
+	std::cout << "log: CgiRequestHandler::handleRequest virtual function called IGNORE" << std::endl;
 }
 
 /// @brief 
@@ -202,15 +202,12 @@ void	CgiRequestHandler::finalizeCgi(Connection& conn) {
 	type = classifyCgiResponse(conn.res);
 	switch(type) {
 		case CGI_DOCUMENT:
-			std::cout << "@@@@@@@@ DEBUG: CGI DOCUMENT" << std::endl;
+			std::cout << "Log: CgiRequestHandler: CGI DOCUMENT" << std::endl;
 			conn.state = WRITING;
 			break;
 		case CGI_LOCAL_REDIR:
 			newReq = processLocalRedir(conn.res);
 			newReq.setRedirectCount(conn.req.getRedirectCount() + 1);
-			
-			std::cout << "******* PRINT INTERNAL REQUEST ******" << std::endl;
-			printRequest(newReq);
 
 			if (conn.req.getRedirectCount() > 10)
 				throw HttpException(508, "Loop Detected");
@@ -223,7 +220,7 @@ void	CgiRequestHandler::finalizeCgi(Connection& conn) {
 				cgiExecutor(conn);
 				//need to push back fds into pollfds and cgifdToPollfd
 				conn.state = RUNNING;
-				std::cout << "@@@@@@@@ DEBUG: CGI LOCAL REDIR -> CGI" << std::endl;
+				std::cout << "Log: CgiRequestHandler: CGI LOCAL REDIR -> CGI" << std::endl;
 			} else {
 				Router	tmpRouter;
 				tmpRouter.setConfig(_globalConfig);
@@ -231,23 +228,23 @@ void	CgiRequestHandler::finalizeCgi(Connection& conn) {
 				tmpRouter.resolve(newReq, conn.res);
 				//need to push back fds
 				conn.state = WRITING;
-				std::cout << "@@@@@@@@ DEBUG: CGI LOCAL REDIR -> STATIC" << std::endl;
+				std::cout << "Log: CgiRequestHandler: CGI LOCAL REDIR -> STATIC" << std::endl;
 			}
-			std::cout << "@@@@@@@@ DEBUG: CGI LOCAL REDIR (END)" << std::endl;
+			std::cout << "Log: CgiRequestHandler: CGI LOCAL REDIR (END)" << std::endl;
 
 			break;
 		case CGI_CLIENT_REDIR:
 			processClientRedir(conn.res);
 			conn.state = WRITING;
-			std::cout << "@@@@@@@@ DEBUG: CGI CLIENT REDIR" << std::endl;
+			std::cout << "Log: CgiRequestHandler: CGI CLIENT REDIR" << std::endl;
 			break;
 		case CGI_CLIENT_DOC_REDIR:
 			processClientRedirWithDocument(conn.res);
 			conn.state = WRITING;
-			std::cout << "@@@@@@@@ DEBUG: CGI CLIENT DOCUMENT REDIR" << std::endl;
+			std::cout << "Log: CgiRequestHandler: CGI CLIENT DOCUMENT REDIR" << std::endl;
 			break;
 		default:
-			std::cout << "@@@@@@@@ DEBUG: NONE" << std::endl;
+			std::cout << "Log: CgiRequestHandler: NONE" << std::endl;
 			throw HttpException(502, "Bad Gateway: Invalid CGI output no type match");
 			break;
 	}
