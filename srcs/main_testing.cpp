@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   main_testing.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: nogioni- <nogioni-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/17 21:38:29 by dopereir          #+#    #+#             */
-/*   Updated: 2026/08/12 21:36:07 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/13 19:06:31 by nogioni-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,7 @@ int	main(int ac, char** av)
 	signal(SIGINT, signalHandler); //ctrl + c
 	signal(SIGQUIT, signalHandler);//ctrl + '\'
 	signal(SIGTERM, signalHandler);//kill command
+	signal(SIGPIPE, SIG_IGN);//to ignore the SIGPIPE from the system
 	
 	if (ac != 2) {
 		std::cout << "usage: ./webserv <config_file.conf>" << std::endl;

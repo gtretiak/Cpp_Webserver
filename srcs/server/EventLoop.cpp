@@ -6,7 +6,7 @@
 /*   By: nogioni- <nogioni-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 21:03:51 by nogioni-          #+#    #+#             */
-/*   Updated: 2026/08/13 18:57:24 by nogioni-         ###   ########.fr       */
+/*   Updated: 2026/08/13 19:16:33 by nogioni-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -401,12 +401,12 @@ void EventLoop::updateClientEvents(int clientFd)
 {
 	for (size_t i = 0; i < _pollFds.size(); ++i)
 	{
+		// this makes the poll() to monitor both read/write at the same time when needed
+		_pollFds[i].events = POLLIN;
 		if (_pollFds[i].fd == clientFd)
 		{
 			if (!_connections[clientFd].writeBuffer.empty())
-				_pollFds[i].events = POLLOUT;
-			else
-				_pollFds[i].events = POLLIN;
+				_pollFds[i].events |= POLLOUT;
 			_pollFds[i].revents = 0;
 			return;
 		}
