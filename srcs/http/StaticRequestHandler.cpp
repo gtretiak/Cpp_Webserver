@@ -30,7 +30,7 @@ void StaticRequestHandler::setContext(serverConfig *server, locationConfig *loca
 
 std::string	StaticRequestHandler::readFile(const std::string &path) {
 	int	fd = open(path.c_str(), O_RDONLY);
-	if (fd < 0)
+	if (fd < 0) // THE ISSUE
 		throw HttpException(404, "File Not Found" + path);
 	std::string	content;
 	char	buf[BUFFER_SIZE];
@@ -229,10 +229,18 @@ std::string StaticRequestHandler::generateAutoindexPage(const std::string &reque
 void	StaticRequestHandler::handleRequest(HttpRequest &req, HttpResponse &res) {
 	std::string	path = req.getPath();
 	std::string	method = req.getMethod();
+	bool		isAllowed;
 
-	if (method != "GET" && method != "POST" && method != "DELETE")
+	if (method == "GET")
+	       	isAllowed = this->_location->_allowed_methods.GET;
+	else if (method == "POST")
+		isAllowed = this->_location->_allowed_methods.POST;
+	else if (method == "DELETE")
+		isAllowed = this->_location->_allowed_methods.DELETE;
+	else
 		throw HttpException(405, "Method Not Allowed: " + method);
-	
+	if (!isAllowed)
+		throw HttpException(405, "Method Not Allowed: " + method);
 	std::string	extension = "UnknownByDefault";
 	size_t	dotPos = path.find_last_of('.');
 
