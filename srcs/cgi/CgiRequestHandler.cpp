@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   CgiRequestHandler.cpp                              :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: dopereir <dopereir@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/09 18:19:23 by dopereir          #+#    #+#             */
-/*   Updated: 2026/08/10 23:01:32 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/13 18:49:09 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,23 +26,23 @@ std::set<std::string>& CgiRequestHandler::initCgiMetaVars() {
 	static std::set<std::string>	vars;
 
 	if (vars.empty()) {
-		vars.insert("AUTH-TYPE");
-		vars.insert("CONTENT-LENGTH");
-		vars.insert("CONTENT-TYPE");
-		vars.insert("GATEWAY-INTERFACE");
-		vars.insert("PATH-INFO");
-		vars.insert("PATH-TRANSLATED");
-		vars.insert("QUERY-STRING");
-		//vars.insert("REMOTE-ADDR");
-		//vars.insert("REMOTE-HOST");
-		//vars.insert("REMOTE-IDENT");
+		vars.insert("AUTH_TYPE");
+		vars.insert("CONTENT_LENGTH");
+		vars.insert("CONTENT_TYPE");
+		vars.insert("GATEWAY_INTERFACE");
+		vars.insert("PATH_INFO");
+		vars.insert("PATH_TRANSLATED");
+		vars.insert("QUERY_STRING");
+		//vars.insert("REMOTE_ADDR");
+		//vars.insert("REMOTE_HOST");
+		//vars.insert("REMOTE_IDENT");
 		//vars.insert("REMOTE-USER");
-		vars.insert("REQUEST-METHOD");
-		vars.insert("SCRIPT-NAME");
+		vars.insert("REQUEST_METHOD");
+		vars.insert("SCRIPT_NAME");
 		//vars.insert("SERVER-NAME");
 		//vars.insert("SERVER-PORT");
-		vars.insert("SERVER-PROTOCOL");
-		vars.insert("SERVER-SOFTWARE");
+		vars.insert("SERVER_PROTOCOL");
+		vars.insert("SERVER_SOFTWARE");
 	}
 	return vars;
 }
