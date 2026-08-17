@@ -30,7 +30,9 @@ void StaticRequestHandler::setContext(serverConfig *server, locationConfig *loca
 
 std::string	StaticRequestHandler::readFile(const std::string &path) {
 	int	fd = open(path.c_str(), O_RDONLY);
-	if (fd < 0) // THE ISSUE
+
+	std::cout << "\t\t ****** StaticRequestHandler::readFile(): Opening file: " << path << std::endl;
+	if (fd < 0)
 		throw HttpException(404, "File Not Found" + path);
 	std::string	content;
 	char	buf[BUFFER_SIZE];
@@ -106,16 +108,24 @@ std::string StaticRequestHandler::getRoot() const
 
 std::string StaticRequestHandler::buildFilePath(const std::string &root, const std::string &path) const
 {
+	std::string	remainder;
+	std::string	locPrefix = _location->_path;
+
+	if (path.compare(0, locPrefix.size(), locPrefix) == 0)
+		remainder = path.substr(locPrefix.size());
+	else
+		remainder = path;
+
 	if (root.empty())
 		throw HttpException(500, "Empty root directive");
 
-	if (!root.empty() && root[root.size() - 1] == '/' && !path.empty() && path[0] == '/')
-		return root + path.substr(1);
+	if (!root.empty() && root[root.size() - 1] == '/' && !remainder.empty() && remainder[0] == '/')
+		return root + remainder.substr(1);
 
-	if (!root.empty() && root[root.size() - 1] != '/' && !path.empty() && path[0] != '/')
-		return root + "/" + path;
+	if (!root.empty() && root[root.size() - 1] != '/' && !remainder.empty() && remainder[0] != '/')
+		return root + "/" + remainder;
 
-	return root + path;
+	return root + remainder;
 }
 
 bool StaticRequestHandler::isDirectory(const std::string &path) const
@@ -229,10 +239,10 @@ std::string StaticRequestHandler::generateAutoindexPage(const std::string &reque
 void	StaticRequestHandler::handleRequest(HttpRequest &req, HttpResponse &res) {
 	std::string	path = req.getPath();
 	std::string	method = req.getMethod();
-	bool		isAllowed;
+	bool		isAllowed = true;
 
 	if (method == "GET")
-	       	isAllowed = this->_location->_allowed_methods.GET;
+		isAllowed = this->_location->_allowed_methods.GET;
 	else if (method == "POST")
 		isAllowed = this->_location->_allowed_methods.POST;
 	else if (method == "DELETE")
@@ -241,43 +251,27 @@ void	StaticRequestHandler::handleRequest(HttpRequest &req, HttpResponse &res) {
 		throw HttpException(405, "Method Not Allowed: " + method);
 	if (!isAllowed)
 		throw HttpException(405, "Method Not Allowed: " + method);
+
 	std::string	extension = "UnknownByDefault";
-	size_t	dotPos = path.find_last_of('.');
+	size_t		dotPos = path.find_last_of('.');
 
 	if (dotPos != std::string::npos)
 		extension = path.substr(dotPos);
 	std::string	type = MimeTypes::getMimeType(extension);
-	//std::string	root = "./www"; //fetch from globalConfig or serverConfig
-	//to fetch root from location config depends on the existence of locationConfig instance and root directive available
-/*	if (loc) // to add once we have location config (and as a parameter too) TODO
-		root = loc->root;*/
-	//std::string	filePath = root + path;
-	/*if (type == "text/html")//temporary if/else block, to be removed TODO
-		filePath = root + "/html" + path;
-	else
-		filePath = root + "/application" + path;*/
-
 	std::string root = getRoot();
 	std::string filePath = buildFilePath(root, path);
 	std::cout << "type(text/html?:[" << type << "],\npath:[" << path << "]\nfilepath:[" << filePath << "]" << std::endl;//for development purposes only; to be removed TODO
 	res.setHeader("connection", "keep-alive");//if the connection is still open
 	res.setHeader("cache-control", "public, max-age=3600");
-	/*if (method == "GET")
-	{
-		std::string	content = readFile(filePath);
-		res.setStatus(200);
-		res.setHeader("content-type", type);
-		res.setBody(content);
-//		std::cout << "[GET] Served: " << filePath << std::endl;//to be removed TODO
-		std::cout << "\nRESPONSE ->\n";//cout - conn.writeBuffer equivalent TODO
-//		std::cout << res.toString() << std::endl;//to test only, to be sent to writeBuffer TODO
-		//system(("open " + filePath).c_str());//to test only, to be removed TODO
-	}*/
+
 	if (method == "GET")
 	{
+		std::cout << "********* GOT HERE DEBUG 1: filePath: " << filePath << std::endl;
 		if (isDirectory(filePath))
 		{
+			std::cout << "********* GOT HERE DEBUG 1.5: filePath: " << filePath << std::endl;
 			std::string indexPath = resolveIndexFile(filePath);
+			std::cout << "********* GOT HERE DEBUG 1.75: indexPath: " << indexPath << std::endl;
 
 			if (!indexPath.empty())
 				filePath = indexPath;
