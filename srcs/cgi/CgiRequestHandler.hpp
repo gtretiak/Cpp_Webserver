@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/05 11:14:54 by dopereir          #+#    #+#             */
-/*   Updated: 2026/07/16 00:09:30 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/14 22:40:27 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -77,7 +77,7 @@ class	CgiRequestHandler : public RequestHandler {
 		void		setExecContext( t_ctx_exec& ctx, HttpRequest& req );
 		void		childRun( t_ctx_exec& ctx );
 		void		cgiExecutor( Connection& conn );
-		std::string	readCgiOutput( int stdout_pipe );
+
 		std::string	getExecRoot( );
 		std::string	getExecScriptPath( std::string& root, std::string url );
 		std::string	getExecScriptDir( std::string& scriptPath );

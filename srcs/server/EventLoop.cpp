@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 21:03:51 by nogioni-          #+#    #+#             */
-/*   Updated: 2026/08/12 22:15:11 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/14 23:49:41 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -79,6 +79,41 @@ void EventLoop::addListenFd(int fd, int server_idx)
 	_listenFdsMAP.insert(std::make_pair(fd, server_idx));
 }
 
+void	EventLoop::abortCgiInput(int fd) {
+	int			clientFd = _cgiInfdToPollfd[fd];
+	Connection	&conn = _connections[clientFd];
+
+	removeFdFromPollFds(fd);
+	_cgiInfdToPollfd.erase(fd);
+	close(fd);
+	conn.cgiData.inFd = -1;
+	(void)conn;
+}
+
+void	EventLoop::writeCgiInput(int fd) {
+	int					clientFd = _cgiInfdToPollfd[fd];
+	Connection			&conn = _connections[clientFd];
+	const std::string	&requestBody = conn.req.getBody();
+
+	size_t	remaining;
+	ssize_t	sent;
+
+	remaining = requestBody.size() - conn.cgiData.bodyBytesSent;
+	sent = write(fd, requestBody.c_str() + conn.cgiData.bodyBytesSent, remaining);
+	if (sent > 0)
+		conn.cgiData.bodyBytesSent += static_cast<size_t>(sent);
+	else if (sent == -1) {
+		abortCgiInput(fd);
+		return ;
+	}
+	if (conn.cgiData.bodyBytesSent >= requestBody.size()) {
+		removeFdFromPollFds(fd);
+		_cgiInfdToPollfd.erase(fd);
+		close(fd);
+		conn.cgiData.inFd = -1;
+	}
+}
+
 void EventLoop::run(globalConfig& config)
 {
 	_running = true;
@@ -112,13 +147,18 @@ void EventLoop::run(globalConfig& config)
 
 				if (revents & (POLLERR | POLLHUP | POLLNVAL))
 				{
-					if (_cgifdToPollfd.count(fd)) { //cgi fd trigged, redirections case
-						std::cout << "\n\n\nCGI POLLHUP FOR FD: "<< fd << "\n\n\n" << std::endl;
+					if (_cgifdToPollfd.count(fd)) { //cgi out fd trigged, redirections case
+						std::cout << "\n\t(log) POLLERR | POLLHUP | POLLNVAL: trigged for cgi out fd:"<< fd << "\n" << std::endl;
 						continueCgi(fd);
 						continue;
 					}
+					if (_cgiInfdToPollfd.count(fd)) { //cgi in fd trigged, redirections case
+						std::cout << "\n\t(log) POLLERR | POLLHUP | POLLNVAL: trigged for cgi in fd: "<< fd << "\n" << std::endl;
+						abortCgiInput(fd);
+						continue;
+					}
 					if (!isListenFd(fd)) {
-						//std::cout << "\n\n\nCLOSE CLIENT - 1\n\n\n" << std::endl;
+						std::cout << "\n\t(log) EventLoop::run(): closeClient() trigged for fd: "<< fd << "\n" << std::endl;
 						closeClient(fd);
 					}
 					continue;
@@ -129,16 +169,16 @@ void EventLoop::run(globalConfig& config)
 				else
 				{
 					if (revents & POLLIN) {
-						if (_cgifdToPollfd.count(fd)) {//cgi fd trigged
-							std::cout << "\n\n\nCGI POLLIN\n\n\n" << std::endl;
+						if (_cgifdToPollfd.count(fd))//cgi out fd trigged
 							continueCgi(fd);
-						}
 						else //non cgi fd trigged
 							readClient(fd);
 					}
 					if (revents & POLLOUT) {
-						std::cout << "EventLoop::run(): POLLOUT triggered for fd " << fd << std::endl;
-						writeClient(fd);
+						if (_cgiInfdToPollfd.count(fd)) //cgi in fd trigged
+							writeCgiInput(fd);
+						else //non cgi fd trigged
+							writeClient(fd);
 					}
 				}
 			} catch (const std::exception& e) {
@@ -302,9 +342,17 @@ void EventLoop::readClient(int clientFd)
 				_pollFds.push_back(conn.cgiData.pollFd);
 				_cgifdToPollfd[conn.cgiData.outFd] = clientFd;
 
-				writeRequestBodyToCgi(conn.req, conn.cgiData.inFd);
-				close(conn.cgiData.inFd);
-				conn.cgiData.inFd = -1;
+				if (!conn.req.getBody().empty()) {
+					conn.cgiData.bodyBytesSent = 0;
+					conn.cgiData.inPollFd.fd = conn.cgiData.inFd;
+					conn.cgiData.inPollFd.events = POLLOUT;
+					conn.cgiData.inPollFd.revents = 0;
+					_pollFds.push_back(conn.cgiData.inPollFd);
+					_cgiInfdToPollfd[conn.cgiData.inFd] = clientFd;
+				} else {
+					close(conn.cgiData.inFd); // sem body, sem write, o close não precisa de poll
+					conn.cgiData.inFd = -1;
+				}
 			}
 			else
 			{
@@ -445,6 +493,8 @@ void	EventLoop::continueCgi( int pipeFd ) {
 	conn.cgiData.outFd = -1;
 	waitpid(deadPid, &status, WNOHANG);
 
+	int	pendingInFd = conn.cgiData.inFd;
+
 	try {
 		conn.setConfig(_config);
 		conn.finalizeCgi(conn);
@@ -459,14 +509,29 @@ void	EventLoop::continueCgi( int pipeFd ) {
 		updateClientEvents(clientFd);
 		return ;
 	}
-	
+
+	if (pendingInFd != -1 && _cgiInfdToPollfd.count(pendingInFd)) {
+		removeFdFromPollFds(pendingInFd);
+		_cgiInfdToPollfd.erase(pendingInFd);
+		close(pendingInFd);
+		conn.cgiData.inFd = -1;
+	}
 
 	if (conn.state == RUNNING) {
 		_pollFds.push_back(conn.cgiData.pollFd);
 		_cgifdToPollfd[conn.cgiData.outFd] = clientFd;
-		writeRequestBodyToCgi(conn.req, conn.cgiData.inFd);
-		close(conn.cgiData.inFd);
-		conn.cgiData.inFd = -1;
+		
+		if (!conn.req.getBody().empty()) {
+			conn.cgiData.bodyBytesSent = 0;
+			conn.cgiData.inPollFd.fd = conn.cgiData.inFd;
+			conn.cgiData.inPollFd.events = POLLOUT;
+			conn.cgiData.inPollFd.revents = 0;
+			_pollFds.push_back(conn.cgiData.inPollFd);
+			_cgiInfdToPollfd[conn.cgiData.inFd] = clientFd;
+		} else {
+			close(conn.cgiData.inFd);   // sem body, sem write, o close não precisa de poll
+			conn.cgiData.inFd = -1;
+		}
 		return ;
 	}
 	size_t	bodySize = conn.res.getBody().size();

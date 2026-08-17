@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 17:42:33 by dopereir          #+#    #+#             */
-/*   Updated: 2026/07/16 00:05:00 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/14 23:52:11 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -78,17 +78,6 @@ std::string CgiRequestHandler::getExecScriptName( std::string& scriptPath ) {
 		}
 	}
 }*/
-
-std::string	CgiRequestHandler::readCgiOutput( int stdout_pipe ) {
-	std::string	cgiOutput;
-	char	buf[4096];
-	ssize_t	bytes;
-
-	while ((bytes = read(stdout_pipe, buf, sizeof(buf))) > 0) {
-		cgiOutput.append(buf, static_cast<size_t>(bytes));
-	}
-	return cgiOutput;
-}
 
 void	CgiRequestHandler::setExecContext( t_ctx_exec& ctx, HttpRequest& req ) {
 	ctx.execRoot = getExecRoot( );
@@ -162,6 +151,9 @@ void	CgiRequestHandler::cgiExecutor( Connection& conn ) {
 
 	close(ctx.stdin_pipe[0]);
 	close(ctx.stdout_pipe[1]);
+
+	fcntl(ctx.stdin_pipe[1], F_SETFL, O_NONBLOCK);
+	fcntl(ctx.stdout_pipe[0], F_SETFL, O_NONBLOCK);
 
 	conn.cgiData.pid = pid;
 	conn.cgiData.inFd = ctx.stdin_pipe[1];
