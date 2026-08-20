@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 09:18:39 by dopereir          #+#    #+#             */
-/*   Updated: 2026/07/14 11:28:51 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/19 23:07:37 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -359,7 +359,10 @@ void configParser::applyServerDirective(serverConfig& server,
 		server._alias = args[0];
 	}
 	else if (name == "index") {
-		server._index.insert(server._index.end(), args.begin(), args.end());
+		if (args.size() != 1) {
+			throw parseError(formatError(line, "index directive expects only one argument"));
+		}
+		server._index.insert(server._index.end(), args[0]);
 	}
 	else if (name == "autoindex") {
 		if (args.size() != 1 || (args[0] != "on" && args[0] != "off")) {
@@ -436,7 +439,10 @@ void configParser::applyLocationDirective(locationConfig& location,
 		location._alias = args[0];
 	}
 	else if (name == "index") {
-		location._index.insert(location._index.end(), args.begin(), args.end());
+		if (args.size() != 1) {
+			throw parseError(formatError(line, "index directive expects one argument"));
+		}
+		location._index.insert(location._index.end(), args[0]);
 	}
 	else if (name == "autoindex") {
 		if (args.size() != 1 || (args[0] != "on" && args[0] != "off")) {

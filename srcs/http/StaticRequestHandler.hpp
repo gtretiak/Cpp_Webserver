@@ -9,9 +9,9 @@
 class StaticRequestHandler : public RequestHandler
 {
 private:
-	globalConfig *_config;
-	serverConfig *_server;
-	locationConfig *_location;
+	globalConfig	*_config;
+	serverConfig	*_server;
+	locationConfig	*_location;
 
 	static std::string readFile(const std::string &path);
 	static std::string getUniquePath(const std::string &path);
@@ -25,9 +25,11 @@ private:
 	std::string buildFilePath(const std::string &root, const std::string &path) const;
 	bool isDirectory(const std::string &path) const;
 	bool isRegularFile(const std::string &path) const;
-	std::string resolveIndexFile(const std::string &dirPath) const;
+	std::string	resolveIndexFile( std::string &dirPath );
+	std::string	searchIndexFiles( const std::string &dirPath ) const;
 
 	bool getAutoindex() const;
+	bool		hasIndexDirective( );
 	std::string generateAutoindexPage(const std::string &requestPath, const std::string &dirPath) const;
 
 public:

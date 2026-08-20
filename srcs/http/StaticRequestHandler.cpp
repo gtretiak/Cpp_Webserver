@@ -28,6 +28,14 @@ void StaticRequestHandler::setContext(serverConfig *server, locationConfig *loca
 	_location = location;
 }
 
+bool	StaticRequestHandler::hasIndexDirective() {
+	if (!_location->_index.empty())
+		return true;
+	if (!_server->_index.empty())
+		return true;
+	return false;
+}
+
 std::string	StaticRequestHandler::readFile(const std::string &path) {
 	int	fd = open(path.c_str(), O_RDONLY);
 
@@ -106,6 +114,10 @@ std::string StaticRequestHandler::getRoot() const
 	throw HttpException(500, "No root directive configured");
 }
 
+/// @brief The behavior of remove the location block match prefix is exclusively to webserv project.
+/// @param root root directive, from server or location
+/// @param path URI from request
+/// @return root + path(URI stripped from matched location prefix)
 std::string StaticRequestHandler::buildFilePath(const std::string &root, const std::string &path) const
 {
 	std::string	remainder;
@@ -146,9 +158,10 @@ bool StaticRequestHandler::isRegularFile(const std::string &path) const
 	return S_ISREG(st.st_mode);
 }
 
-std::string StaticRequestHandler::resolveIndexFile(const std::string &dirPath) const
+std::string	StaticRequestHandler::searchIndexFiles( const std::string &dirPath ) const
 {
-	const std::vector<std::string> *indexes;
+	const std::vector<std::string>	*indexes;
+	struct dirent					*entry;
 
 	indexes = NULL;
 	if (_location && !_location->_index.empty())
@@ -157,8 +170,8 @@ std::string StaticRequestHandler::resolveIndexFile(const std::string &dirPath) c
 		indexes = &_server->_index;
 
 	if (indexes != NULL) {
-		std::cout << "StaticRequestHandler::resolveIndexFile(): Using index files from " << (_location ? "location" : "server") << std::endl;
-		std::cout << "Configured index files: ";
+		std::cout << "StaticRequestHandler::searchIndexFile(): Using index files from " << (_location ? "location" : "server") << std::endl;
+		std::cout << "Configured index files: \t";
 		for (size_t i = 0; i < indexes->size(); ++i)
 		{
 			std::cout << (*indexes)[i];
@@ -166,24 +179,58 @@ std::string StaticRequestHandler::resolveIndexFile(const std::string &dirPath) c
 				std::cout << ", ";
 		}
 	}
-
-	else
-		std::cout << "StaticRequestHandler::resolveIndexFile(): No index files configured" << std::endl;
-
-	if (indexes == NULL)
-		return "";
-
-	for (size_t i = 0; i < indexes->size(); ++i)
-	{
-		std::string candidate = dirPath;
-
-		if (!candidate.empty() && candidate[candidate.size() - 1] != '/')
-			candidate += "/";
-		candidate += (*indexes)[i];
-
-		if (isRegularFile(candidate))
-			return candidate;
+	else {
+		std::cout << "	StaticRequestHandler::searchIndexFiles(): No index files configured" << std::endl;
+		return ("");
 	}
+
+
+	//open dirpath
+	DIR	*dir = opendir(dirPath.c_str());
+	if (!dir) {
+		throw HttpException(500, "Internal Error: failed to open dirpath of index files");
+	}
+
+	//search for any match within the indexes.
+	while ((entry = readdir(dir)) != NULL) {
+		std::string	filename(entry->d_name);
+
+		if (filename == "." || filename == "..")
+			continue;
+		for (std::vector<std::string>::const_iterator it = indexes->begin(); it != indexes->end(); ++it) {
+			const std::string &pattern = *it;
+
+			//wildcard suffix match
+			if (!pattern.empty() && pattern[0] == '*') {
+				std::string suffix = pattern.substr(1);//get extension after '*'
+
+				if (filename.size() >= suffix.size() &&
+					filename.compare(filename.size() - suffix.size(),
+									suffix.size(), suffix) == 0)
+				{
+					closedir(dir);
+					return dirPath + "/" + filename;
+				}
+			}
+			//literal match
+			if (filename == pattern) {
+				closedir(dir);
+				return std::string(dirPath + "/" + filename);
+			}
+		}
+	}
+	closedir(dir);
+	return ("");
+}
+
+std::string StaticRequestHandler::resolveIndexFile(std::string &dirPath)
+{
+	std::string	candidate;
+
+	candidate = searchIndexFiles(dirPath);
+	//std::cout << "\t\tDEBUG: resolveIndexFile():candidate = " << candidate << std::endl;
+	if (isRegularFile(candidate))
+		return candidate;
 	return "";
 }
 
@@ -262,16 +309,17 @@ void	StaticRequestHandler::handleRequest(HttpRequest &req, HttpResponse &res) {
 	std::string filePath = buildFilePath(root, path);
 	std::cout << "type(text/html?:[" << type << "],\npath:[" << path << "]\nfilepath:[" << filePath << "]" << std::endl;//for development purposes only; to be removed TODO
 	res.setHeader("connection", "keep-alive");//if the connection is still open
+	//check if the there is any header in the request that says otherwise
 	res.setHeader("cache-control", "public, max-age=3600");
 
 	if (method == "GET")
 	{
-		std::cout << "********* GOT HERE DEBUG 1: filePath: " << filePath << std::endl;
+		//std::cout << "********* GOT HERE DEBUG 1: filePath: " << filePath << std::endl;
 		if (isDirectory(filePath))
 		{
-			std::cout << "********* GOT HERE DEBUG 1.5: filePath: " << filePath << std::endl;
+			//std::cout << "********* GOT HERE DEBUG 1.5: filePath: " << filePath << std::endl;
 			std::string indexPath = resolveIndexFile(filePath);
-			std::cout << "********* GOT HERE DEBUG 1.75: indexPath: " << indexPath << std::endl;
+			//std::cout << "\n********* GOT HERE DEBUG 1.75: indexPath: " << indexPath << std::endl;
 
 			if (!indexPath.empty())
 				filePath = indexPath;
@@ -283,8 +331,12 @@ void	StaticRequestHandler::handleRequest(HttpRequest &req, HttpResponse &res) {
 				res.setBody(content);
 				return;
 			}
-			else
-				throw HttpException(403, "Directory listing forbidden");
+			else {
+				if (hasIndexDirective())
+					throw (HttpException(404, "Not Found"));
+				else
+					throw HttpException(403, "Directory listing forbidden");
+			}
 		}
 
 		extension = "UnknownByDefault";
