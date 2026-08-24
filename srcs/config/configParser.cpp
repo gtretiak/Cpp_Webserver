@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 09:18:39 by dopereir          #+#    #+#             */
-/*   Updated: 2026/08/22 17:39:01 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/24 10:46:10 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -307,8 +307,9 @@ std::map<int, std::string>	configParser::parseReturn(const std::vector<std::stri
 		if (isURL(value[1])) {
 			_return_redirect[status_code] = value[1];
 		}
-		if (value[1][0] == '/')
+		else {
 			_return_redirect[status_code] = value[1];
+		} 
 	}
 	else {
 		_return_redirect[status_code] = value[1];
