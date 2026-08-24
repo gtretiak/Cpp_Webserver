@@ -12,6 +12,7 @@ Connection::Connection() : CgiRequestHandler(), matchedServer(NULL), matchedLoca
 	lastActivity = std::time(NULL);
 	req = HttpRequest();
 	res = HttpResponse();
+	cgiExecutable = "";
 	cgiData = CgiContext();
 }
 
@@ -26,6 +27,7 @@ Connection::Connection(int clientFd) : CgiRequestHandler(), fd(clientFd), matche
 	lastActivity = std::time(NULL);
 	req = HttpRequest();
 	res = HttpResponse();
+	cgiExecutable = "";
 	cgiData = CgiContext();
 }
 
@@ -43,6 +45,7 @@ Connection::Connection(const Connection& other) : CgiRequestHandler(),
 	req(other.req),
 	res(other.res),
 	state(other.state),
+	cgiExecutable(other.cgiExecutable),
 	cgiData(other.cgiData)
 	{}
 
@@ -61,27 +64,10 @@ Connection& Connection::operator=(const Connection& other) {
 		req = other.req;
 		res = other.res;
 		state = other.state;
+		cgiExecutable = other.cgiExecutable;
 		cgiData = other.cgiData;
 	}
 	return *this;
-}
-
-void	writeRequestBodyToCgi( HttpRequest& req, int stdin_fd ) {
-	const std::string	requestBody = req.getBody();
-	size_t				written;
-
-	if (requestBody.empty())
-		return;
-	if (!requestBody.empty()) {
-		const char	*buffer = requestBody.c_str();
-		written = 0;
-		while (written < requestBody.size()) {
-			ssize_t chunk = write(stdin_fd, buffer + written, requestBody.size() - written);
-			if (chunk <= 0)
-				break;
-			written += static_cast<size_t>(chunk);
-		}
-	}
 }
 
 void	Connection::clear() {

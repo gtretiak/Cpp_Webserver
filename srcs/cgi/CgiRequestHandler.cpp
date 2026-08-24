@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   CgiRequestHandler.cpp                              :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dopereir <dopereir@student.42.fr>          +#+  +:+       +#+        */
+/*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/09 18:19:23 by dopereir          #+#    #+#             */
-/*   Updated: 2026/08/13 18:49:09 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/23 22:36:53 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -69,6 +69,16 @@ void	CgiRequestHandler::setMetaVar( std::string& key, std::string& value ) {
 
 void	CgiRequestHandler::setConfig( globalConfig* config ) {
 	_globalConfig = config;
+}
+
+void	CgiRequestHandler::setServer( serverConfig* server ) {
+	if (server)
+		_serverSetting = server;
+}
+
+void CgiRequestHandler::setLocation( locationConfig* location ) {
+	if (location)
+		_locSetting = location;
 }
 
 std::string	CgiRequestHandler::getMetaVar( std::string& key ) const {
@@ -164,7 +174,7 @@ void	CgiRequestHandler::parseCgiHttpResponse( HttpResponse &res, std::string &cg
 	size_t		headerEnd;
 
 	headerEnd = cgiOutput.find("\r\n\r\n");
-	if (headerEnd == std::string::npos) {
+	if (headerEnd == std::string::npos) {//HERE
 		throw HttpException(502, "Bad gateway: no header terminator in CGI output");
 	}
 	std::string	headerSection = cgiOutput.substr(0, headerEnd);
@@ -181,6 +191,11 @@ void	CgiRequestHandler::parseCgiHttpResponse( HttpResponse &res, std::string &cg
 }
 
 void	CgiRequestHandler::handleRequest(Connection& conn) {
+	std::string	method = conn.req.getMethod();
+
+	if (method != "GET" && method != "POST" && method != "HEAD")
+		throw HttpException(405, "Method not allowed. CGI only supports GET, POST and HEAD");
+
 	extractMetaVars( conn.req );
 	cgiExecutor(conn); //still need to handle timeout throw 504
 }
@@ -258,4 +273,5 @@ void	CgiRequestHandler::finalizeCgi(Connection& conn) {
 		conn.cgiData.outFd = -1;
 		conn.cgiData.cgiLastActivity = 0;
 	}
+	std::cerr << "CGI status: " << conn.res.getStatusCode() << '\n';
 }

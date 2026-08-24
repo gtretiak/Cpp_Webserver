@@ -52,8 +52,8 @@ bool Router::locationMatches(const std::string &locationPath, const std::string 
 
 locationConfig *Router::findBestLocation(serverConfig &server, const std::string &path)
 {
-	locationConfig *best;
-	size_t bestLen;
+	locationConfig	*best;
+	size_t			bestLen;
 
 	best = NULL;
 	bestLen = 0;
@@ -62,6 +62,21 @@ locationConfig *Router::findBestLocation(serverConfig &server, const std::string
 	{
 		std::string locationPath = server._locations[i]._path;
 
+		//check for wildcard extension match
+		if (locationPath[0] == '*') {
+			std::string	suffix = locationPath.substr(1);
+
+			if (path.length() >= suffix.length()) {
+				size_t	start_pos = path.length() - suffix.length();
+
+				if (path.compare(start_pos, suffix.length(), suffix) == 0) {
+					return &server._locations[i];
+				}
+			}
+			continue ;
+		}
+
+		//standard prefix match
 		if (locationMatches(locationPath, path) && locationPath.size() > bestLen)
 		{
 			best = &server._locations[i];
@@ -69,6 +84,54 @@ locationConfig *Router::findBestLocation(serverConfig &server, const std::string
 		}
 	}
 	return best;
+}
+
+bool	Router::isCgiRequest( std::string& target ) {
+	std::map<std::string, cgiExecutableConf>::iterator	it;
+	std::string		extension;
+	size_t			dotPos;
+
+	dotPos = target.find_last_of(".");
+	if (dotPos == std::string::npos)
+		return false;
+	extension = target.substr(dotPos);
+	if (CurrentConn_->matchedLocation->_has_cgi == true) {
+
+		it = CurrentConn_->matchedLocation->_cgi.cgi_extension.find(extension);
+		
+		if (it != CurrentConn_->matchedLocation->_cgi.cgi_extension.end()) {
+			std::string	req_method = CurrentConn_->req.getMethod();
+
+			if (req_method == "GET" && it->second.allowedMethodsCGI.GET == false)
+				return false;
+			if (req_method == "POST" && it->second.allowedMethodsCGI.POST == false)
+				return false;
+			if (req_method == "DELETE" && it->second.allowedMethodsCGI.DELETE == false)
+				return false;
+
+			CurrentConn_->cgiExecutable = it->second.path;
+			return true;
+		}
+	}
+	if (CurrentConn_->matchedServer->_has_cgi == true) {
+
+		it = CurrentConn_->matchedServer->_cgi.cgi_extension.find(extension);
+		
+		if (it != CurrentConn_->matchedServer->_cgi.cgi_extension.end()) {
+			std::string	req_method = CurrentConn_->req.getMethod();
+
+			if (req_method == "GET" && it->second.allowedMethodsCGI.GET == false)
+				return false;
+			if (req_method == "POST" && it->second.allowedMethodsCGI.POST == false)
+				return false;
+			if (req_method == "DELETE" && it->second.allowedMethodsCGI.DELETE == false)
+				return false;
+			
+			CurrentConn_->cgiExecutable = it->second.path;
+			return true;
+		}
+	}
+	return false;
 }
 
 bool Router::hasReturnDirective(serverConfig *server, locationConfig *location) const
@@ -127,23 +190,27 @@ int Router::resolve(HttpRequest &req, HttpResponse &res)
 
 	std::cout << " **** RESOLVE(): target: " << target << std::endl;
 	if (location)
-		std::cout << " **** RESOLVE(): matched location: " << location->_path << std::endl;
+		std::cout <<"\n**** RESOLVE(): matched location: " << location->_path << std::endl;
 	else
-		std::cout << " **** RESOLVE(): no matching location" << std::endl;
+		std::cout <<"\n**** RESOLVE(): no matching location" << std::endl;
 
 	if (hasReturnDirective(server, location)) {
 		std::cout << " **** RESOLVE(): return directive found, applying return directive" << std::endl;
 		return applyReturnDirective(server, location, res);
 	}
 
-	if (target.find("/cgi-bin") != std::string::npos)
+	if (isCgiRequest(target))
 	{
 		CurrentConn_->req = req;
-//		std::cout << " **** RESOLVE(): CGI-BIN target: " << target << std::endl;TODO - remove
+		cgiHandler.setServer(server);
+		if (location)
+			cgiHandler.setLocation(location);
+		
+		std::cout << "\t**** RESOLVE(): CGI-BIN target: " << target << std::endl;
 		cgiHandler.handleRequest(*CurrentConn_);
 		res = CurrentConn_->res;
 
-//		std::cout << "\n*************** printMetaVars() for current response *************** " << std::endl;TODO - remove
+		std::cout << "\n*************** printMetaVars() for current response *************** " << std::endl;
 		cgiHandler.printMetaVars();
 		
 		return (0);

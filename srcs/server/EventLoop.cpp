@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 21:03:51 by nogioni-          #+#    #+#             */
-/*   Updated: 2026/08/14 23:49:41 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/24 10:35:23 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -148,12 +148,12 @@ void EventLoop::run(globalConfig& config)
 				if (revents & (POLLERR | POLLHUP | POLLNVAL))
 				{
 					if (_cgifdToPollfd.count(fd)) { //cgi out fd trigged, redirections case
-						std::cout << "\n\t(log) POLLERR | POLLHUP | POLLNVAL: trigged for cgi out fd:"<< fd << "\n" << std::endl;
+						std::cout << "\n\t(log) (1)POLLERR | POLLHUP | POLLNVAL: trigged for cgi out fd:"<< fd << "\n" << std::endl;
 						continueCgi(fd);
 						continue;
 					}
 					if (_cgiInfdToPollfd.count(fd)) { //cgi in fd trigged, redirections case
-						std::cout << "\n\t(log) POLLERR | POLLHUP | POLLNVAL: trigged for cgi in fd: "<< fd << "\n" << std::endl;
+						std::cout << "\n\t(log) (2)POLLERR | POLLHUP | POLLNVAL: trigged for cgi in fd: "<< fd << "\n" << std::endl;
 						abortCgiInput(fd);
 						continue;
 					}
@@ -320,9 +320,14 @@ void EventLoop::readClient(int clientFd)
 			if (!parser.isRequestComplete(conn.readBuffer))
 				return;
 
-			std::cout << "----- RAW REQUEST from fd " << clientFd << " -----\n"
-					  << conn.readBuffer
-					  << "\n----- END REQUEST -----" << std::endl;
+			//DEBUG , remove this block, only used to check raw request received from client, last request only
+			int fd = open("tester_logs/log_1.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+			if (fd != -1) {
+				write(fd, "\t----- RAW REQUEST ------", 26);
+				write(fd, conn.readBuffer.c_str(), conn.readBuffer.size());
+				write(fd, "\n\t----- END REQUEST -----\n", 27);
+				close(fd);
+			}
 
 			size_t consumed = parser.parseRequest(conn.readBuffer, &conn.req);
 			conn.readBuffer.erase(0, consumed);

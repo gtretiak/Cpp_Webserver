@@ -23,8 +23,10 @@ class	Router {
 		locationConfig			*findBestLocation(serverConfig &server, const std::string &path);
 		bool					locationMatches(const std::string &locationPath, const std::string &requestPath) const;
 
-		bool hasReturnDirective(serverConfig *server, locationConfig *location) const;
-		int applyReturnDirective(serverConfig *server, locationConfig *location, HttpResponse &res) const;
+		bool					isCgiRequest( std::string& target );
+
+		bool	hasReturnDirective(serverConfig *server, locationConfig *location) const;
+		int		applyReturnDirective(serverConfig *server, locationConfig *location, HttpResponse &res) const;
 		
 		Router	&operator=(const Router &other);//do not use
 	

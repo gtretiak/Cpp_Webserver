@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/22 23:27:24 by dopereir          #+#    #+#             */
-/*   Updated: 2026/07/14 11:25:59 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/20 21:54:54 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,7 +28,10 @@ serverConfig::serverConfig()
 	_directives(),
 	_return(),
 	_has_return(false),
-	_upload_store() {}
+	_cgi(),
+	_has_cgi(false),
+	_upload_store()
+	{}
 
 serverConfig::serverConfig(const serverConfig& other)
 	: _listens(other._listens),
@@ -46,6 +49,8 @@ serverConfig::serverConfig(const serverConfig& other)
 	_directives(other._directives),
 	_return(other._return),
 	_has_return(other._has_return),
+	_cgi(other._cgi),
+	_has_cgi(other._has_cgi),
 	_upload_store(other._upload_store) {}
 
 serverConfig& serverConfig::operator=(const serverConfig& other) {
@@ -65,6 +70,8 @@ serverConfig& serverConfig::operator=(const serverConfig& other) {
 		_directives = other._directives;
 		_return = other._return;
 		_has_return = other._has_return;
+		_cgi = other._cgi;
+		_has_cgi = other._has_cgi;
 		_upload_store = other._upload_store;
 	}
 	return *this;

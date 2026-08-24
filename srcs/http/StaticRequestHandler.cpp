@@ -80,10 +80,11 @@ bool	StaticRequestHandler::fileExists(const std::string &path) {
 	close(fd);
 	return (true);
 }
+
 bool	StaticRequestHandler::hasWDPermission(const std::string &path) {
-	if (path.find("uploads") == std::string::npos)
-		return false;
-	return true;
+	if (access(path.c_str(), W_OK) == 0)
+		return true;
+	return false;
 }
 
 std::string	StaticRequestHandler::getUniquePath(const std::string &path) {
@@ -305,21 +306,19 @@ void	StaticRequestHandler::handleRequest(HttpRequest &req, HttpResponse &res) {
 	if (dotPos != std::string::npos)
 		extension = path.substr(dotPos);
 	std::string	type = MimeTypes::getMimeType(extension);
-	std::string root = getRoot();
-	std::string filePath = buildFilePath(root, path);
-	std::cout << "type(text/html?:[" << type << "],\npath:[" << path << "]\nfilepath:[" << filePath << "]" << std::endl;//for development purposes only; to be removed TODO
+	std::string	root = getRoot();
+	std::string	filePath = buildFilePath(root, path);
+	
+	std::cout << "type(text/html?:[" << type << "],\npath:[" << path << "]\nfilepath:[" << filePath << "]" << std::endl;
 	res.setHeader("connection", "keep-alive");//if the connection is still open
-	//check if the there is any header in the request that says otherwise
 	res.setHeader("cache-control", "public, max-age=3600");
+	//check if the there is any header in the request that says otherwise
 
 	if (method == "GET")
 	{
-		//std::cout << "********* GOT HERE DEBUG 1: filePath: " << filePath << std::endl;
 		if (isDirectory(filePath))
 		{
-			//std::cout << "********* GOT HERE DEBUG 1.5: filePath: " << filePath << std::endl;
 			std::string indexPath = resolveIndexFile(filePath);
-			//std::cout << "\n********* GOT HERE DEBUG 1.75: indexPath: " << indexPath << std::endl;
 
 			if (!indexPath.empty())
 				filePath = indexPath;
@@ -352,6 +351,20 @@ void	StaticRequestHandler::handleRequest(HttpRequest &req, HttpResponse &res) {
 	}
 	else if (method == "POST")
 	{
+		//1. location block already resolved
+		//2. check client max body size
+		if (_location && _location->_has_client_max_body_size && req.getBody().size() > _location->_client_max_body_size)
+			throw HttpException(413, "Request Entity Too Large");
+		if (_server->_has_client_max_body_size && req.getBody().size() > _server->_client_max_body_size)
+			throw HttpException(413, "Request Entity Too Large");
+
+		if (_location && !_location->upload_store.empty())
+			filePath = buildFilePath(_location->upload_store, path);
+		else if (!_server->_upload_store.empty())
+			filePath = buildFilePath(_server->_upload_store, path);
+		else
+			throw HttpException(405, "Method not allowed");
+
 		if (!hasWDPermission(filePath))
 			throw HttpException(403, "Forbidden: No Write Permission");
 		std::string	body = req.getBody();

@@ -80,6 +80,7 @@ struct	Connection : public CgiRequestHandler {
 	HttpResponse	res;
 
 	ConnectionState	state;		// current state of the connection
+	std::string		cgiExecutable;	// path to the CGI executable, if applicable
 	CgiContext		cgiData;	// context for CGI handling
 
 	Connection();
@@ -90,8 +91,6 @@ struct	Connection : public CgiRequestHandler {
 	void	clear();
 	void	resetConnection();
 };
-
-void	writeRequestBodyToCgi( HttpRequest &req, int stdin_fd );
 
 
 #endif

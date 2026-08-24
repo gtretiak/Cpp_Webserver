@@ -156,13 +156,13 @@ void	HttpResponse::generateErrorPageResponse( const char *filepath, int errorCod
 
 	char	buffer[4096];
 	ssize_t	bytesRead;
-	std::cout << "****** REMOVE ME LATER debug: generateErrorPageResponse: filepath = " << filepath << std::endl;
+	//std::cout << "****** REMOVE ME LATER debug: generateErrorPageResponse: filepath = " << filepath << std::endl;
 	//read file into buffer and append to body_
 	while ((bytesRead = read(fd, buffer, sizeof(buffer) - 1)) > 0) {
 		buffer[bytesRead] = '\0';
 		this->body_.append(buffer, bytesRead);
 	}
-	std::cout << "****** REMOVE ME LATER debug: generateErrorPageResponse: body = " << this->body_ << std::endl;
+	//std::cout << "****** REMOVE ME LATER debug: generateErrorPageResponse: body = " << this->body_ << std::endl;
 	ss << this->body_.length();
 	this->setVersion("HTTP/1.1");
 	if (!this->hasHeader("content-length"))

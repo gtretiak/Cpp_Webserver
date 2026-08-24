@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 09:10:22 by dopereir          #+#    #+#             */
-/*   Updated: 2026/06/02 22:49:45 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/22 15:11:57 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,6 +54,7 @@ private:
 	bool				isURL(const std::string& value) const;
 	std::string			join(const std::vector<std::string>& values) const;
 	void				appendAllowedMethod(limitExcept& methods, const std::string& value);
+	void				parseCgiExtension( const std::vector<std::string>& args, limitExcept& methods );
 
 public:
 	configParser();

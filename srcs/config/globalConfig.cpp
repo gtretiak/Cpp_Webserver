@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 18:13:28 by dopereir          #+#    #+#             */
-/*   Updated: 2026/08/11 21:52:12 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/22 17:14:56 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -103,6 +103,25 @@ void	globalConfig::printData() const
 		}
 		else
 			std::cout << "    - not set" << std::endl;
+		std::cout << "  CGI Config:" << std::endl;
+		for (std::map<std::string, cgiExecutableConf>::const_iterator cgi_it = it->_cgi.cgi_extension.begin(); cgi_it != it->_cgi.cgi_extension.end(); ++cgi_it)
+		{
+			std::cout << "    - " << cgi_it->first << ": " << cgi_it->second.path << std::endl;
+			std::cout << "      Allowed Methods: ";
+			for (std::map<std::string, cgiExecutableConf>::const_iterator cgi_it = it->_cgi.cgi_extension.begin(); cgi_it != it->_cgi.cgi_extension.end(); ++cgi_it)
+			{
+				std::string methods;
+				if (cgi_it->second.allowedMethodsCGI.GET)
+					methods += "GET ";
+				if (cgi_it->second.allowedMethodsCGI.POST)
+					methods += "POST ";
+				if (cgi_it->second.allowedMethodsCGI.DELETE)
+					methods += "DELETE";
+				if (methods.empty())
+					methods = "not set";
+				std::cout << methods << std::endl;
+			}
+		}
 		std::cout << "  Locations:" << std::endl;
 		for (size_t i = 0; i < it->_locations.size(); ++i)
 		{
@@ -188,9 +207,9 @@ void	globalConfig::printLocations(const locationConfig& location) const
 		std::cout << "			CGI Config:" << std::endl;
 		std::cout << "				Upload Store: " << location.upload_store << std::endl;
 		std::cout << "				CGI Extensions:" << std::endl;
-		for (std::map<std::string, std::string>::const_iterator cgi_it = location._cgi.cgi_extension.begin(); cgi_it != location._cgi.cgi_extension.end(); ++cgi_it)
+		for (std::map<std::string, cgiExecutableConf>::const_iterator cgi_it = location._cgi.cgi_extension.begin(); cgi_it != location._cgi.cgi_extension.end(); ++cgi_it)
 		{
-			std::cout << "				- " << cgi_it->first << ": " << cgi_it->second << std::endl;
+			std::cout << "				- " << cgi_it->first << ": " << cgi_it->second.path << std::endl;
 		}
 	}
 }
