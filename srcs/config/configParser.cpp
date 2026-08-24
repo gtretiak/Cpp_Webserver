@@ -6,7 +6,7 @@
 /*   By: nogioni- <nogioni-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 09:18:39 by dopereir          #+#    #+#             */
-/*   Updated: 2026/08/20 14:35:09 by nogioni-         ###   ########.fr       */
+/*   Updated: 2026/08/22 17:39:01 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -360,7 +360,10 @@ void configParser::applyServerDirective(serverConfig& server,
 		server._alias = args[0];
 	}
 	else if (name == "index") {
-		server._index.insert(server._index.end(), args.begin(), args.end());
+		if (args.size() != 1) {
+			throw parseError(formatError(line, "index directive expects only one argument"));
+		}
+		server._index.insert(server._index.end(), args[0]);
 	}
 	else if (name == "autoindex") {
 		if (args.size() != 1 || (args[0] != "on" && args[0] != "off")) {
@@ -373,7 +376,11 @@ void configParser::applyServerDirective(serverConfig& server,
 			throw parseError(formatError(line, "client_max_body_size expects one argument"));
 		}
 		server._client_max_body_size = parseSize(args[0], line);
-		server._has_client_max_body_size = true;
+		if (server._client_max_body_size == 0) {
+			server._has_client_max_body_size = false;
+		}
+		else
+			server._has_client_max_body_size = true;
 	}
 	else if (name == "error_page") {
 		if (args.size() < 2) {
@@ -398,6 +405,22 @@ void configParser::applyServerDirective(serverConfig& server,
 		for (size_t i = 0; i < args.size(); ++i) {
 			appendAllowedMethod(server._allowed_methods, args[i]);
 		}
+	}
+	else if (name == "cgi_extension") {
+		if (args.size() < 2) {
+			throw parseError(formatError(line, "cgi_extension expects extension and executable path"));
+		}
+		if (!isValidCgiExtention(args[0])) {
+			throw parseError(formatError(line, "Invalid CGI extension"));
+		}
+		cgiExecutableConf	cgiExe;
+		cgiExe.path = args[1];
+
+		if (args.size() > 2) {//has method restriction
+			parseCgiExtension(args, cgiExe.allowedMethodsCGI);
+		}
+		server._cgi.cgi_extension[args[0]] = cgiExe;
+		server._has_cgi = true;
 	}
 	else if (name == "return") {
 		if (args.empty()) {
@@ -437,7 +460,10 @@ void configParser::applyLocationDirective(locationConfig& location,
 		location._alias = args[0];
 	}
 	else if (name == "index") {
-		location._index.insert(location._index.end(), args.begin(), args.end());
+		if (args.size() != 1) {
+			throw parseError(formatError(line, "index directive expects one argument"));
+		}
+		location._index.insert(location._index.end(), args[0]);
 	}
 	else if (name == "autoindex") {
 		if (args.size() != 1 || (args[0] != "on" && args[0] != "off")) {
@@ -450,7 +476,11 @@ void configParser::applyLocationDirective(locationConfig& location,
 			throw parseError(formatError(line, "client_max_body_size expects one argument"));
 		}
 		location._client_max_body_size = parseSize(args[0], line);
-		location._has_client_max_body_size = true;
+		if (location._client_max_body_size == 0) {
+			location._has_client_max_body_size = false;
+		}
+		else
+			location._has_client_max_body_size = true;
 	}
 	else if (name == "error_page") {
 		if (args.size() < 2) {
@@ -480,13 +510,19 @@ void configParser::applyLocationDirective(locationConfig& location,
 		}
 	}
 	else if (name == "cgi_extension") {
-		if (args.size() != 2) {
+		if (args.size() < 2) {
 			throw parseError(formatError(line, "cgi_extension expects extension and executable path"));
 		}
 		if (!isValidCgiExtention(args[0])) {
 			throw parseError(formatError(line, "Invalid CGI extension"));
 		}
-		location._cgi.cgi_extension[args[0]] = args[1];
+		cgiExecutableConf	cgiExe;
+		cgiExe.path = args[1];
+
+		if (args.size() > 2) {//has method restriction
+			parseCgiExtension(args, cgiExe.allowedMethodsCGI);
+		}
+		location._cgi.cgi_extension[args[0]] = cgiExe;
 		location._has_cgi = true;
 	}
 	else if (name == "upload_store") {
@@ -569,6 +605,36 @@ globalConfig configParser::parseConfig() {
 		}
 	}
 	return config;
+}
+
+void	configParser::parseCgiExtension( const std::vector<std::string>& args, limitExcept& methods) {
+	methods.GET = false;
+	methods.POST = false;
+	methods.DELETE = false;
+
+	// Iterate through all arguments after the executable path (index 2 onwards)
+	for (size_t i = 2; i < args.size(); ++i) {
+		std::string token = args[i];
+
+		for (size_t j = 0; j < token.length(); ++j) {
+			token[j] = std::toupper(token[j]);
+		}
+
+		if (token == "|") continue;
+
+		std::istringstream iss(token);
+		std::string method;
+		while (std::getline(iss, method, '|')) {
+			if (method.empty()) continue;
+			
+			if (method == "GET") methods.GET = true;
+			else if (method == "POST") methods.POST = true;
+			else if (method == "DELETE") methods.DELETE = true;
+			else {
+				throw std::runtime_error("Invalid method in cgi_extension: " + method);
+			}
+		}
+	}
 }
 
 globalConfig configParser::parse(const std::string& filename) {

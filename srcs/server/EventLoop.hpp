@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 21:03:53 by nogioni-          #+#    #+#             */
-/*   Updated: 2026/08/10 19:07:43 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/14 23:04:08 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,6 +39,7 @@ class	EventLoop
 		std::map<int, Connection>		_connections;	//list of all clients connected at the time 
 						//(Connection: complete status of the client)
 		std::map<int, int>				_cgifdToPollfd; //maps the cgi script fd to the pollfd index, so we can find it in the _pollFds vector
+		std::map<int, int>				_cgiInfdToPollfd; //maps the cgi script input fd to the pollfd index, so we can find it in the _pollFds vector
 		globalConfig*					_config;		//pointer to the global config, used to route requests
 		Router*							_router;		//used to route requests to the correct handler
 		bool							_running; //controls the main loop
@@ -52,6 +53,9 @@ class	EventLoop
 		void	addListenFd(int fd, int server_idx); //adds a server socket to the loop
 		void	run(globalConfig& config);	//main function of the server
 		void	stop();	//ends loop
+
+		void	writeCgiInput(int fd);
+		void	abortCgiInput(int fd);
 
 	// can't be called directly by who is using the class 
 	// only make sense inside the run() flow

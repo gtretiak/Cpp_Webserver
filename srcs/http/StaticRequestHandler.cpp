@@ -28,9 +28,19 @@ void StaticRequestHandler::setContext(serverConfig *server, locationConfig *loca
 	_location = location;
 }
 
+bool	StaticRequestHandler::hasIndexDirective() {
+	if (!_location->_index.empty())
+		return true;
+	if (!_server->_index.empty())
+		return true;
+	return false;
+}
+
 std::string	StaticRequestHandler::readFile(const std::string &path) {
 	int	fd = open(path.c_str(), O_RDONLY);
-	if (fd < 0) // THE ISSUE
+
+	std::cout << "\t\t ****** StaticRequestHandler::readFile(): Opening file: " << path << std::endl;
+	if (fd < 0)
 		throw HttpException(404, "File Not Found" + path);
 	std::string	content;
 	char	buf[BUFFER_SIZE];
@@ -70,10 +80,11 @@ bool	StaticRequestHandler::fileExists(const std::string &path) {
 	close(fd);
 	return (true);
 }
+
 bool	StaticRequestHandler::hasWDPermission(const std::string &path) {
-	if (path.find("uploads") == std::string::npos)
-		return false;
-	return true;
+	if (access(path.c_str(), W_OK) == 0)
+		return true;
+	return false;
 }
 
 std::string	StaticRequestHandler::getUniquePath(const std::string &path) {
@@ -104,18 +115,30 @@ std::string StaticRequestHandler::getRoot() const
 	throw HttpException(500, "No root directive configured");
 }
 
+/// @brief The behavior of remove the location block match prefix is exclusively to webserv project.
+/// @param root root directive, from server or location
+/// @param path URI from request
+/// @return root + path(URI stripped from matched location prefix)
 std::string StaticRequestHandler::buildFilePath(const std::string &root, const std::string &path) const
 {
+	std::string	remainder;
+	std::string	locPrefix = _location->_path;
+
+	if (path.compare(0, locPrefix.size(), locPrefix) == 0)
+		remainder = path.substr(locPrefix.size());
+	else
+		remainder = path;
+
 	if (root.empty())
 		throw HttpException(500, "Empty root directive");
 
-	if (!root.empty() && root[root.size() - 1] == '/' && !path.empty() && path[0] == '/')
-		return root + path.substr(1);
+	if (!root.empty() && root[root.size() - 1] == '/' && !remainder.empty() && remainder[0] == '/')
+		return root + remainder.substr(1);
 
-	if (!root.empty() && root[root.size() - 1] != '/' && !path.empty() && path[0] != '/')
-		return root + "/" + path;
+	if (!root.empty() && root[root.size() - 1] != '/' && !remainder.empty() && remainder[0] != '/')
+		return root + "/" + remainder;
 
-	return root + path;
+	return root + remainder;
 }
 
 bool StaticRequestHandler::isDirectory(const std::string &path) const
@@ -136,9 +159,10 @@ bool StaticRequestHandler::isRegularFile(const std::string &path) const
 	return S_ISREG(st.st_mode);
 }
 
-std::string StaticRequestHandler::resolveIndexFile(const std::string &dirPath) const
+std::string	StaticRequestHandler::searchIndexFiles( const std::string &dirPath ) const
 {
-	const std::vector<std::string> *indexes;
+	const std::vector<std::string>	*indexes;
+	struct dirent					*entry;
 
 	indexes = NULL;
 	if (_location && !_location->_index.empty())
@@ -147,8 +171,8 @@ std::string StaticRequestHandler::resolveIndexFile(const std::string &dirPath) c
 		indexes = &_server->_index;
 
 	if (indexes != NULL) {
-		std::cout << "StaticRequestHandler::resolveIndexFile(): Using index files from " << (_location ? "location" : "server") << std::endl;
-		std::cout << "Configured index files: ";
+		std::cout << "StaticRequestHandler::searchIndexFile(): Using index files from " << (_location ? "location" : "server") << std::endl;
+		std::cout << "Configured index files: \t";
 		for (size_t i = 0; i < indexes->size(); ++i)
 		{
 			std::cout << (*indexes)[i];
@@ -156,24 +180,58 @@ std::string StaticRequestHandler::resolveIndexFile(const std::string &dirPath) c
 				std::cout << ", ";
 		}
 	}
-
-	else
-		std::cout << "StaticRequestHandler::resolveIndexFile(): No index files configured" << std::endl;
-
-	if (indexes == NULL)
-		return "";
-
-	for (size_t i = 0; i < indexes->size(); ++i)
-	{
-		std::string candidate = dirPath;
-
-		if (!candidate.empty() && candidate[candidate.size() - 1] != '/')
-			candidate += "/";
-		candidate += (*indexes)[i];
-
-		if (isRegularFile(candidate))
-			return candidate;
+	else {
+		std::cout << "	StaticRequestHandler::searchIndexFiles(): No index files configured" << std::endl;
+		return ("");
 	}
+
+
+	//open dirpath
+	DIR	*dir = opendir(dirPath.c_str());
+	if (!dir) {
+		throw HttpException(500, "Internal Error: failed to open dirpath of index files");
+	}
+
+	//search for any match within the indexes.
+	while ((entry = readdir(dir)) != NULL) {
+		std::string	filename(entry->d_name);
+
+		if (filename == "." || filename == "..")
+			continue;
+		for (std::vector<std::string>::const_iterator it = indexes->begin(); it != indexes->end(); ++it) {
+			const std::string &pattern = *it;
+
+			//wildcard suffix match
+			if (!pattern.empty() && pattern[0] == '*') {
+				std::string suffix = pattern.substr(1);//get extension after '*'
+
+				if (filename.size() >= suffix.size() &&
+					filename.compare(filename.size() - suffix.size(),
+									suffix.size(), suffix) == 0)
+				{
+					closedir(dir);
+					return dirPath + "/" + filename;
+				}
+			}
+			//literal match
+			if (filename == pattern) {
+				closedir(dir);
+				return std::string(dirPath + "/" + filename);
+			}
+		}
+	}
+	closedir(dir);
+	return ("");
+}
+
+std::string StaticRequestHandler::resolveIndexFile(std::string &dirPath)
+{
+	std::string	candidate;
+
+	candidate = searchIndexFiles(dirPath);
+	//std::cout << "\t\tDEBUG: resolveIndexFile():candidate = " << candidate << std::endl;
+	if (isRegularFile(candidate))
+		return candidate;
 	return "";
 }
 
@@ -229,10 +287,10 @@ std::string StaticRequestHandler::generateAutoindexPage(const std::string &reque
 void	StaticRequestHandler::handleRequest(HttpRequest &req, HttpResponse &res) {
 	std::string	path = req.getPath();
 	std::string	method = req.getMethod();
-	bool		isAllowed;
+	bool		isAllowed = true;
 
 	if (method == "GET")
-	       	isAllowed = this->_location->_allowed_methods.GET;
+		isAllowed = this->_location->_allowed_methods.GET;
 	else if (method == "POST")
 		isAllowed = this->_location->_allowed_methods.POST;
 	else if (method == "DELETE")
@@ -241,38 +299,21 @@ void	StaticRequestHandler::handleRequest(HttpRequest &req, HttpResponse &res) {
 		throw HttpException(405, "Method Not Allowed: " + method);
 	if (!isAllowed)
 		throw HttpException(405, "Method Not Allowed: " + method);
+
 	std::string	extension = "UnknownByDefault";
-	size_t	dotPos = path.find_last_of('.');
+	size_t		dotPos = path.find_last_of('.');
 
 	if (dotPos != std::string::npos)
 		extension = path.substr(dotPos);
 	std::string	type = MimeTypes::getMimeType(extension);
-	//std::string	root = "./www"; //fetch from globalConfig or serverConfig
-	//to fetch root from location config depends on the existence of locationConfig instance and root directive available
-/*	if (loc) // to add once we have location config (and as a parameter too) TODO
-		root = loc->root;*/
-	//std::string	filePath = root + path;
-	/*if (type == "text/html")//temporary if/else block, to be removed TODO
-		filePath = root + "/html" + path;
-	else
-		filePath = root + "/application" + path;*/
-
-	std::string root = getRoot();
-	std::string filePath = buildFilePath(root, path);
-	std::cout << "type(text/html?:[" << type << "],\npath:[" << path << "]\nfilepath:[" << filePath << "]" << std::endl;//for development purposes only; to be removed TODO
+	std::string	root = getRoot();
+	std::string	filePath = buildFilePath(root, path);
+	
+	std::cout << "type(text/html?:[" << type << "],\npath:[" << path << "]\nfilepath:[" << filePath << "]" << std::endl;
 	res.setHeader("connection", "keep-alive");//if the connection is still open
 	res.setHeader("cache-control", "public, max-age=3600");
-	/*if (method == "GET")
-	{
-		std::string	content = readFile(filePath);
-		res.setStatus(200);
-		res.setHeader("content-type", type);
-		res.setBody(content);
-//		std::cout << "[GET] Served: " << filePath << std::endl;//to be removed TODO
-		std::cout << "\nRESPONSE ->\n";//cout - conn.writeBuffer equivalent TODO
-//		std::cout << res.toString() << std::endl;//to test only, to be sent to writeBuffer TODO
-		//system(("open " + filePath).c_str());//to test only, to be removed TODO
-	}*/
+	//check if the there is any header in the request that says otherwise
+
 	if (method == "GET")
 	{
 		if (isDirectory(filePath))
@@ -289,8 +330,12 @@ void	StaticRequestHandler::handleRequest(HttpRequest &req, HttpResponse &res) {
 				res.setBody(content);
 				return;
 			}
-			else
-				throw HttpException(403, "Directory listing forbidden");
+			else {
+				if (hasIndexDirective())
+					throw (HttpException(404, "Not Found"));
+				else
+					throw HttpException(403, "Directory listing forbidden");
+			}
 		}
 
 		extension = "UnknownByDefault";
@@ -306,6 +351,20 @@ void	StaticRequestHandler::handleRequest(HttpRequest &req, HttpResponse &res) {
 	}
 	else if (method == "POST")
 	{
+		//1. location block already resolved
+		//2. check client max body size
+		if (_location && _location->_has_client_max_body_size && req.getBody().size() > _location->_client_max_body_size)
+			throw HttpException(413, "Request Entity Too Large");
+		if (_server->_has_client_max_body_size && req.getBody().size() > _server->_client_max_body_size)
+			throw HttpException(413, "Request Entity Too Large");
+
+		if (_location && !_location->upload_store.empty())
+			filePath = buildFilePath(_location->upload_store, path);
+		else if (!_server->_upload_store.empty())
+			filePath = buildFilePath(_server->_upload_store, path);
+		else
+			throw HttpException(405, "Method not allowed");
+
 		if (!hasWDPermission(filePath))
 			throw HttpException(403, "Forbidden: No Write Permission");
 		std::string	body = req.getBody();

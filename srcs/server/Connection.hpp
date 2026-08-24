@@ -27,18 +27,27 @@ typedef struct CgiContext {
 	std::string	outputBuffer;	// buffer to store the CGI output
 	time_t		cgiLastActivity;	// timestamp of the last activity for timeout handling
 	struct pollfd	pollFd;		// pollfd structure for monitoring the CGI script's output
+	struct pollfd	inPollFd;	// pollfd structure for monitoring the CGI script's input
+	size_t			bodyBytesSent;
 
 	CgiContext() : inFd(-1), outFd(-1), pid(-1), outputBuffer(""), cgiLastActivity(0) {
 		pollFd.fd = -1;
 		pollFd.events = POLLIN;
 		pollFd.revents = 0;
+
+		inPollFd.fd = -1;
+		inPollFd.events = POLLOUT;
+		inPollFd.revents = 0;
 	}
 	CgiContext(const CgiContext& other) : inFd(other.inFd),
 		outFd(other.outFd),
 		pid(other.pid),
 		outputBuffer(other.outputBuffer),
 		cgiLastActivity(other.cgiLastActivity),
-		pollFd(other.pollFd) {}
+		pollFd(other.pollFd),
+		inPollFd(other.inPollFd),
+		bodyBytesSent(other.bodyBytesSent) {}
+
 	CgiContext& operator=(const CgiContext& other) {
 		if (this != &other) {
 			inFd = other.inFd;
@@ -47,6 +56,8 @@ typedef struct CgiContext {
 			outputBuffer = other.outputBuffer;
 			cgiLastActivity = other.cgiLastActivity;
 			pollFd = other.pollFd;
+			inPollFd = other.inPollFd;
+			bodyBytesSent = other.bodyBytesSent;
 		}
 		return *this;
 	}
@@ -69,6 +80,7 @@ struct	Connection : public CgiRequestHandler {
 	HttpResponse	res;
 
 	ConnectionState	state;		// current state of the connection
+	std::string		cgiExecutable;	// path to the CGI executable, if applicable
 	CgiContext		cgiData;	// context for CGI handling
 
 	Connection();
@@ -79,8 +91,6 @@ struct	Connection : public CgiRequestHandler {
 	void	clear();
 	void	resetConnection();
 };
-
-void	writeRequestBodyToCgi( HttpRequest &req, int stdin_fd );
 
 
 #endif

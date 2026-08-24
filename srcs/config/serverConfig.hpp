@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/21 23:20:08 by dopereir          #+#    #+#             */
-/*   Updated: 2026/07/14 11:25:36 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/20 21:48:55 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,6 +31,8 @@ public:
 	std::vector<directiveValue>	_directives;
 	std::map<int, std::string>	_return;	//allows direct status code with text or no text, and redirection with status code and url
 	bool						_has_return;
+	cgiConfig					_cgi;
+	bool						_has_cgi;
 	std::string					_upload_store;
 
 	serverConfig();

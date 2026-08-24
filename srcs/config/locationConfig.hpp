@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 11:54:28 by dopereir          #+#    #+#             */
-/*   Updated: 2026/08/07 01:16:38 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/22 15:07:17 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,8 +48,13 @@ struct directiveValue {
 	std::vector<std::string>	args;
 };
 
+struct	cgiExecutableConf {
+	std::string	path;
+	limitExcept	allowedMethodsCGI;
+};
+
 struct cgiConfig {
-	std::map<std::string, std::string>	cgi_extension;
+	std::map<std::string, cgiExecutableConf>	cgi_extension;
 };
 
 class	locationConfig {

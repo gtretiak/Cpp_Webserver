@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/05 11:14:54 by dopereir          #+#    #+#             */
-/*   Updated: 2026/07/16 00:09:30 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/23 21:20:55 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,6 +40,7 @@ typedef struct	s_ctx_exec {
 	int			stdin_pipe[2];
 	int			stdout_pipe[2];
 	std::string	cgiOutput;
+	std::string	cgiExecutable;
 }	t_ctx_exec;
 
 class	CgiRequestHandler : public RequestHandler {
@@ -77,7 +78,7 @@ class	CgiRequestHandler : public RequestHandler {
 		void		setExecContext( t_ctx_exec& ctx, HttpRequest& req );
 		void		childRun( t_ctx_exec& ctx );
 		void		cgiExecutor( Connection& conn );
-		std::string	readCgiOutput( int stdout_pipe );
+
 		std::string	getExecRoot( );
 		std::string	getExecScriptPath( std::string& root, std::string url );
 		std::string	getExecScriptDir( std::string& scriptPath );
@@ -101,14 +102,13 @@ class	CgiRequestHandler : public RequestHandler {
 		void		freeEnvp( );
 
 		//globalConfig interface functions
-		void					getConfigSettings( HttpRequest &req );
 		locationConfig*			findCgiLocation( serverConfig& server, const std::string& pathTarget) const;
 		int						getClientMaxBodySize( );
 
 		//meta-variable getters
-		std::string	getPathInfo( std::string& requestUrl );
-		std::string	getScriptName( std::string& requestUrl );
-		std::string	getPathTranslated( );
+		std::string	getPathInfo( std::string& requestUrl, const std::string& scriptFilename );
+		std::string	getScriptName( std::string& requestUrl, const std::string& scriptFilename );
+		std::string	getPathTranslated( const std::string& pathInfo );
 		std::string	getMetaVar( std::string& key ) const ;
 		std::string	getQueryFromURI( const std::string& URI );
 		std::string	getPathFromURI( const std::string& URI );
@@ -118,14 +118,15 @@ class	CgiRequestHandler : public RequestHandler {
 		void							insertStaticMetaVars( );
 		void							setMetaVar( std::string& key, std::string& value );
 		void							setConfig( globalConfig* config );
-		
+		void							setServer( serverConfig* server );
+		void							setLocation( locationConfig* location );
 		//utilities
+		std::string	buildCgiFilePath(const std::string &root, const std::string &path) const;
 		void	printMetaVars( );
 		void	printEnvp( );
 };
 
 //interface functions for eventloop
-//void	writeRequestBodyToCgi( HttpRequest &req, int stdin_pipe[2] );
 
 void	printRequest( HttpRequest &req );
 void	printResponse( HttpResponse &res );
