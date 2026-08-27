@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/05 11:14:54 by dopereir          #+#    #+#             */
-/*   Updated: 2026/08/23 21:20:55 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/25 00:38:43 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -97,9 +97,10 @@ class	CgiRequestHandler : public RequestHandler {
 		
 
 		//meta-variables operations
-		void		extractMetaVars( HttpRequest& req );
-		char		**metaVarsToEnvp( );
-		void		freeEnvp( );
+		void				extractMetaVars( HttpRequest& req );
+		static std::string	httpHeaderToCgiMetaVar( const std::string& headerName );
+		char				**metaVarsToEnvp( );
+		void				freeEnvp( );
 
 		//globalConfig interface functions
 		locationConfig*			findCgiLocation( serverConfig& server, const std::string& pathTarget) const;

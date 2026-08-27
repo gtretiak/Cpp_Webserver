@@ -33,22 +33,6 @@ HttpResponse&	HttpResponse::operator=(const HttpResponse &other) {
 	return *this;
 }
 
-std::string	HttpResponse::toString() const
-{
-	std::ostringstream	ss;
-
-	ss << this->version_ << " " << this->statusCode_ << " ";
-	ss << this->statusText_ << "\r\n";
-	if (!this->headers_.empty())
-	{
-		for (std::map<std::string, std::string>::const_iterator i = this->headers_.begin(); i != this->headers_.end(); i++)
-		ss << i->first << ": " << i->second << "\r\n";
-	}
-	ss << "\r\n";
-	if (!this->body_.empty())
-		ss << this->body_;
-	return (ss.str());
-}
 void	HttpResponse::setVersion(const std::string &v) {
 	this->version_ = v;
 }
@@ -114,10 +98,19 @@ const std::string	HttpResponse::getVersion( ) const {
 	return version_;
 }
 
-const std::string	HttpResponse::getBody() const {
-	if (body_.empty())
-		return "";
+const std::string&	HttpResponse::getBody() const {
 	return body_;
+}
+
+void	HttpResponse::swapBody( std::string& newBody ) {
+	this->body_.swap(newBody);
+}
+
+void	HttpResponse::adoptBody( std::string& newBody ) {
+	body_.swap(newBody);
+	std::ostringstream	ss;
+	ss << body_.size();
+	this->setHeader("content-length", ss.str());
 }
 
 bool	HttpResponse::hasHeader(const std::string &k) const {
@@ -172,3 +165,28 @@ void	HttpResponse::generateErrorPageResponse( const char *filepath, int errorCod
 	close(fd);
 }
 
+std::string	HttpResponse::buildHeaderString( ) const {
+	std::stringstream	ss;
+
+	ss << this->version_ << " " << this->statusCode_ << " ";
+	ss << this->statusText_ << "\r\n";
+
+	if (!this->headers_.empty())
+	{
+		for (std::map<std::string, std::string>::const_iterator i = this->headers_.begin(); i != this->headers_.end(); i++)
+		ss << i->first << ": " << i->second << "\r\n";
+	}
+	ss << "\r\n";
+	return ss.str();
+}
+
+void	HttpResponse::clear() {
+	std::string().swap(version_);
+	std::string().swap(serverName_);
+	statusCode_ = 200;
+	std::string().swap(statusText_);
+	std::string().swap(body_);
+	std::string().swap(date_);
+	headers_.clear();
+	has_status_ = false;
+}

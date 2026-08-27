@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 17:42:33 by dopereir          #+#    #+#             */
-/*   Updated: 2026/08/24 10:27:51 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/27 22:47:51 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -89,8 +89,8 @@ void	CgiRequestHandler::setExecContext( t_ctx_exec& ctx, HttpRequest& req ) {
 	ctx.execRoot = getExecRoot( );
 	ctx.scriptPath = buildCgiFilePath( ctx.execRoot, req.getPath());
 
-	std::cout << "DEBUG: buildCgiFilePath:\t" << ctx.scriptPath << std::endl;
-	std::cout << "DEBUG: req.getPath():\t" << req.getPath() << std::endl;
+	//std::cout << "DEBUG: buildCgiFilePath:\t" << ctx.scriptPath << std::endl;
+	//std::cout << "DEBUG: req.getPath():\t" << req.getPath() << std::endl;
 	
 	//instead of check for the name of resource file, check the existence of interpreter/cgi_tester
 	if (access(ctx.cgiExecutable.c_str(), X_OK) != 0)
@@ -98,8 +98,8 @@ void	CgiRequestHandler::setExecContext( t_ctx_exec& ctx, HttpRequest& req ) {
 	ctx.scriptDir = getExecScriptDir(ctx.scriptPath);
 	ctx.scriptName = getExecScriptName(ctx.scriptPath);
 
-	std::cout << "DEBUG: getExecScriptDir(scriptDir):\t" << ctx.scriptDir << std::endl;
-	std::cout << "DEBUG: getExecScriptName(scriptName):\t" << ctx.scriptName << std::endl;
+	//std::cout << "DEBUG: getExecScriptDir(scriptDir):\t" << ctx.scriptDir << std::endl;
+	//std::cout << "DEBUG: getExecScriptName(scriptName):\t" << ctx.scriptName << std::endl;
 
 	if (pipe(ctx.stdin_pipe) == -1)
 		throw HttpException(500, "pipe creation failed");
@@ -149,14 +149,12 @@ void	CgiRequestHandler::cgiExecutor( Connection& conn ) {
 	t_ctx_exec	ctx;
 	pid_t		pid;
 
-	const std::string	requestBody = conn.req.getBody();
-
 	if (!_envp) {
 		throw HttpException(500, "Internal Error envp not valid");
 	}
 
 	ctx.cgiExecutable = resolveExecutable(conn.cgiExecutable);
-	std::cout << "\t\tDEBUG: cgiExecutor(): ctx.cgiExecutable: " << ctx.cgiExecutable << std::endl;
+	//std::cout << "\t\tDEBUG: cgiExecutor(): ctx.cgiExecutable: " << ctx.cgiExecutable << std::endl;
 	setExecContext(ctx, conn.req);
 	pid = fork();
 	if (pid == -1) {

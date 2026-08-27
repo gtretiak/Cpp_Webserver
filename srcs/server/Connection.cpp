@@ -73,9 +73,9 @@ Connection& Connection::operator=(const Connection& other) {
 void	Connection::clear() {
 	fd = -1;
 	serverIndex = -1;
-	readBuffer.clear();
-	writeBuffer.clear();
-	httpVersion.clear();
+	std::string().swap(readBuffer);
+	std::string().swap(writeBuffer);
+	std::string().swap(httpVersion);
 	keepAlive = true;
 	shouldClose = false;
 	lastActivity = std::time(NULL);
@@ -86,8 +86,9 @@ void	Connection::clear() {
 }
 
 void	Connection::resetConnection() {
-	writeBuffer.clear();
-	httpVersion.clear();
+	std::string().swap(readBuffer);
+	std::string().swap(writeBuffer);
+	std::string().swap(httpVersion);
 	req = HttpRequest();
 	res = HttpResponse();
 	cgiData = CgiContext();

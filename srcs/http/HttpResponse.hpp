@@ -21,7 +21,6 @@ class	HttpResponse {
 		HttpResponse(const std::string &serverName);
 		HttpResponse	&operator=(const HttpResponse &other);
 
-		std::string	toString() const;
 		void		setVersion(const std::string &v);
 		void		setStatus(int code);
 		void		setStatusText( );
@@ -35,11 +34,15 @@ class	HttpResponse {
 		const std::map<std::string, std::string>&	getHeaders( ) const;
 		int					getStatusCode();
 		const std::string	getVersion( ) const;
-		const std::string	getBody( ) const;
-		
+		const std::string&	getBody( ) const;
+		void				swapBody(std::string& newbody);
+		void				adoptBody(std::string& newbody);
 
 		bool		hasHeader(const std::string &k) const;
 		void		generateErrorPageResponse( const char *filepath, int errorCode );
+		std::string	buildHeaderString() const;
+
+		void	clear();
 		~HttpResponse();
 };
 

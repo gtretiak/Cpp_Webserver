@@ -26,13 +26,13 @@ class	HttpRequest {
 		void	setPath(const std::string &p);
 		void	setQuery(const std::string &q);
 		void	setVersion(const std::string &v);
-		void	setBody(const std::string &b);
-		std::string	getMethod() const;
-		std::string	getUrl() const;
-		std::string	getPath() const;
-		std::string	getQuery() const;
-		std::string	getVersion() const;
-		std::string	getBody() const;
+		void	setBody(std::string b);
+		const std::string&	getMethod() const;
+		const std::string&	getUrl() const;
+		const std::string&	getPath() const;
+		const std::string&	getQuery() const;
+		const std::string&	getVersion() const;
+		const std::string&	getBody() const;
 		void	setHeader(const std::string &k, const std::string &v);
 		bool	hasHeader(const std::string &key) const;
 		std::string	getHeader(const std::string &key) const;
@@ -40,6 +40,9 @@ class	HttpRequest {
 		void	incrementRedirectCount();
 		int		getRedirectCount( ) const;
 		void	setRedirectCount( int value );
+		void	adoptBody( std::string& body );
+
+		void	clear();
 
 		~HttpRequest();
 };

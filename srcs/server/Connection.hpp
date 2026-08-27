@@ -30,6 +30,7 @@ typedef struct CgiContext {
 	struct pollfd	inPollFd;	// pollfd structure for monitoring the CGI script's input
 	size_t			bodyBytesSent;
 
+
 	CgiContext() : inFd(-1), outFd(-1), pid(-1), outputBuffer(""), cgiLastActivity(0) {
 		pollFd.fd = -1;
 		pollFd.events = POLLIN;
@@ -60,6 +61,23 @@ typedef struct CgiContext {
 			bodyBytesSent = other.bodyBytesSent;
 		}
 		return *this;
+	}
+
+	void	clear() {
+		inFd = -1;
+		outFd = -1;
+		pid = -1;
+		std::string().swap(outputBuffer);
+		cgiLastActivity = 0;
+		pollFd.fd = -1;
+		pollFd.events = POLLIN;
+		pollFd.revents = 0;
+
+		inPollFd.fd = -1;
+		inPollFd.events = POLLOUT;
+		inPollFd.revents = 0;
+
+		bodyBytesSent = 0;
 	}
 }	CgiContext;
 

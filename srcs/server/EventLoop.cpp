@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 21:03:51 by nogioni-          #+#    #+#             */
-/*   Updated: 2026/08/24 10:35:23 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/27 22:51:39 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -111,6 +111,9 @@ void	EventLoop::writeCgiInput(int fd) {
 		_cgiInfdToPollfd.erase(fd);
 		close(fd);
 		conn.cgiData.inFd = -1;
+
+		std::string	emptyStr;
+		conn.res.swapBody(emptyStr);
 	}
 }
 
@@ -148,12 +151,12 @@ void EventLoop::run(globalConfig& config)
 				if (revents & (POLLERR | POLLHUP | POLLNVAL))
 				{
 					if (_cgifdToPollfd.count(fd)) { //cgi out fd trigged, redirections case
-						std::cout << "\n\t(log) (1)POLLERR | POLLHUP | POLLNVAL: trigged for cgi out fd:"<< fd << "\n" << std::endl;
+						std::cout << "\n\t(log) (1)POLLERR | POLLHUP | POLLNVAL: trigged for cgi *OUT* fd:"<< fd << "\n" << std::endl;
 						continueCgi(fd);
 						continue;
 					}
 					if (_cgiInfdToPollfd.count(fd)) { //cgi in fd trigged, redirections case
-						std::cout << "\n\t(log) (2)POLLERR | POLLHUP | POLLNVAL: trigged for cgi in fd: "<< fd << "\n" << std::endl;
+						std::cout << "\n\t(log) (2)POLLERR | POLLHUP | POLLNVAL: trigged for cgi *IN* fd: "<< fd << "\n" << std::endl;
 						abortCgiInput(fd);
 						continue;
 					}
@@ -169,14 +172,18 @@ void EventLoop::run(globalConfig& config)
 				else
 				{
 					if (revents & POLLIN) {
-						if (_cgifdToPollfd.count(fd))//cgi out fd trigged
+						if (_cgifdToPollfd.count(fd)) {//cgi out fd trigged
+							std::cout << "\n\t(log) (3)POLLIN trigged for cgi *OUT* fd: "<< fd << "\n" << std::endl;
 							continueCgi(fd);
+						}
 						else //non cgi fd trigged
 							readClient(fd);
 					}
 					if (revents & POLLOUT) {
-						if (_cgiInfdToPollfd.count(fd)) //cgi in fd trigged
+						if (_cgiInfdToPollfd.count(fd)) {//cgi in fd trigged
+							std::cout << "\n\t(log) (4)POLLOUT trigged for cgi *IN* fd: "<< fd << "\n" << std::endl;
 							writeCgiInput(fd);
+						}
 						else //non cgi fd trigged
 							writeClient(fd);
 					}
@@ -278,7 +285,7 @@ locationConfig *EventLoop::findBestLocation(serverConfig &server, const std::str
 
 void EventLoop::readClient(int clientFd)
 {
-	char		buffer[8192];
+	char		buffer[65536];
 	Connection	&conn = _connections[clientFd];
 
 
@@ -321,13 +328,13 @@ void EventLoop::readClient(int clientFd)
 				return;
 
 			//DEBUG , remove this block, only used to check raw request received from client, last request only
-			int fd = open("tester_logs/log_1.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+			/*int fd = open("tester_logs/log_1.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
 			if (fd != -1) {
 				write(fd, "\t----- RAW REQUEST ------", 26);
 				write(fd, conn.readBuffer.c_str(), conn.readBuffer.size());
 				write(fd, "\n\t----- END REQUEST -----\n", 27);
 				close(fd);
-			}
+			}*/
 
 			size_t consumed = parser.parseRequest(conn.readBuffer, &conn.req);
 			conn.readBuffer.erase(0, consumed);
@@ -370,7 +377,13 @@ void EventLoop::readClient(int clientFd)
 					if (conn.res.hasHeader("Content-Length") == false)
 						conn.res.setHeader("Content-Length", ss.str());
 				}
-				conn.writeBuffer = conn.res.toString();
+				const std::string &headerStr = conn.res.buildHeaderString();
+				const std::string &body = conn.res.getBody();	// reference now,#1
+
+				conn.writeBuffer.clear();
+				conn.writeBuffer = headerStr;
+				conn.writeBuffer.reserve(headerStr.size() + body.size());
+				conn.writeBuffer += body;	// exactly one copy — the unavoidable minimum
 			}
 
 			conn.shouldClose = false;
@@ -388,7 +401,14 @@ void EventLoop::readClient(int clientFd)
 
 			conn.state = CLOSING;
 			handleHttpError(clientFd, e.code());
-			conn.writeBuffer = conn.res.toString();
+
+			const std::string &headerStr = conn.res.buildHeaderString();
+			const std::string &body = conn.res.getBody();
+
+			conn.writeBuffer.clear();
+			conn.writeBuffer = headerStr;
+			conn.writeBuffer.reserve(headerStr.size() + body.size());
+			conn.writeBuffer += body;
 		}
 
 		updateClientEvents(clientFd);
@@ -477,7 +497,7 @@ void	EventLoop::continueCgi( int pipeFd ) {
 	int			clientFd = _cgifdToPollfd[pipeFd];
 	Connection	&conn = _connections[clientFd];
 
-	char	buf[4096];
+	char	buf[65536];
 	ssize_t	bytesRead = read(pipeFd, buf, sizeof(buf));
 	
 	if (bytesRead > 0) {
@@ -502,7 +522,7 @@ void	EventLoop::continueCgi( int pipeFd ) {
 
 	try {
 		conn.setConfig(_config);
-		conn.finalizeCgi(conn);
+		conn.finalizeCgi(conn);//adapt finalizeCgi for streaming cgi data
 	}
 	catch (const HttpException& e) {
 		std::cout << e.what() << std::endl;
@@ -510,7 +530,15 @@ void	EventLoop::continueCgi( int pipeFd ) {
 
 		handleHttpError(clientFd, e.code());
 		conn.state = CLOSING;
-		conn.writeBuffer = conn.res.toString();
+
+		const std::string &headerStr = conn.res.buildHeaderString();
+		const std::string &body = conn.res.getBody();
+
+		conn.writeBuffer.clear();
+		conn.writeBuffer = headerStr;
+		conn.writeBuffer.reserve(headerStr.size() + body.size());
+		conn.writeBuffer += body;
+
 		updateClientEvents(clientFd);
 		return ;
 	}
@@ -539,6 +567,7 @@ void	EventLoop::continueCgi( int pipeFd ) {
 		}
 		return ;
 	}
+	//THIS BLOCK ABOVE MAY NEED ADAPTATION. if we send data in chunks
 	size_t	bodySize = conn.res.getBody().size();
 	if (bodySize > 0) {
 		std::stringstream	ss;
@@ -547,7 +576,15 @@ void	EventLoop::continueCgi( int pipeFd ) {
 		if (conn.res.hasHeader("Content-Length") == false)
 			conn.res.setHeader("Content-Length", ss.str());
 	}
-	conn.writeBuffer = conn.res.toString();
+
+	const std::string &headerStr = conn.res.buildHeaderString();
+	const std::string &body = conn.res.getBody();
+
+	conn.writeBuffer.clear();
+	conn.writeBuffer = headerStr;
+	conn.writeBuffer.reserve(headerStr.size() + body.size());
+	conn.writeBuffer += body;
+
 	updateClientEvents(clientFd);
 }
 

@@ -188,14 +188,14 @@ int Router::resolve(HttpRequest &req, HttpResponse &res)
 	CurrentConn_->matchedServer = server;
 	CurrentConn_->matchedLocation = location;
 
-	std::cout << " **** RESOLVE(): target: " << target << std::endl;
-	if (location)
+	//std::cout << " **** RESOLVE(): target: " << target << std::endl;
+	/*if (location)
 		std::cout <<"\n**** RESOLVE(): matched location: " << location->_path << std::endl;
 	else
-		std::cout <<"\n**** RESOLVE(): no matching location" << std::endl;
+		std::cout <<"\n**** RESOLVE(): no matching location" << std::endl;*/
 
 	if (hasReturnDirective(server, location)) {
-		std::cout << " **** RESOLVE(): return directive found, applying return directive" << std::endl;
+		//std::cout << " **** RESOLVE(): return directive found, applying return directive" << std::endl;
 		return applyReturnDirective(server, location, res);
 	}
 
@@ -206,12 +206,12 @@ int Router::resolve(HttpRequest &req, HttpResponse &res)
 		if (location)
 			cgiHandler.setLocation(location);
 		
-		std::cout << "\t**** RESOLVE(): CGI-BIN target: " << target << std::endl;
+		//std::cout << "\t**** RESOLVE(): CGI-BIN target: " << target << std::endl;
 		cgiHandler.handleRequest(*CurrentConn_);
 		res = CurrentConn_->res;
 
-		std::cout << "\n*************** printMetaVars() for current response *************** " << std::endl;
-		cgiHandler.printMetaVars();
+		//std::cout << "\n*************** printMetaVars() for current response *************** " << std::endl;
+		//cgiHandler.printMetaVars();
 		
 		return (0);
 	}
@@ -223,5 +223,9 @@ int Router::resolve(HttpRequest &req, HttpResponse &res)
 		staticHandler.handleRequest(req, res);
 	}
 	return (1);
+}
+
+CgiRequestHandler& Router::getCgiHandler( ) {
+	return	cgiHandler;
 }
 Router::~Router() {}

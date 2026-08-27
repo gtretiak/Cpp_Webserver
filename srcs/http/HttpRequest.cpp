@@ -47,8 +47,12 @@ void	HttpRequest::setQuery(const std::string &q) {
 void	HttpRequest::setVersion(const std::string &v) {
 	this->version_ = v;
 }
-void	HttpRequest::setBody(const std::string &b) {
-		this->body_ = b;
+
+/// @brief Differs from adaptBody, this function sets the body string by copying
+/// @brief it into the internal body_ member, which may involve a copy and can be less efficient than adoptBody().
+/// @param b 
+void	HttpRequest::setBody(std::string b) {
+		body_.swap(b);
 }
 void	HttpRequest::setHeader(const std::string &k, const std::string &v) {
 	std::string	lowKey = toLower(k);
@@ -61,23 +65,23 @@ void	HttpRequest::setHeader(const std::string &k, const std::string &v) {
 	}
 	this->headers_[lowKey] = v;
 }
-std::string	HttpRequest::getMethod() const {
+const std::string&	HttpRequest::getMethod() const {
 	return (this->method_);
 }
-std::string	HttpRequest::getUrl() const {
+const std::string&	HttpRequest::getUrl() const {
 	return (this->url_);
 }
-std::string	HttpRequest::getPath() const {
+const std::string&	HttpRequest::getPath() const {
 	return (this->path_);
 }
-std::string	HttpRequest::getQuery() const {
+const std::string&	HttpRequest::getQuery() const {
 	return (this->query_);
 }
-std::string	HttpRequest::getVersion() const {
+const std::string&	HttpRequest::getVersion() const {
 	return (this->version_);
 }
-std::string	HttpRequest::getBody() const {
-	return (this->body_);
+const std::string&	HttpRequest::getBody() const {
+	return (body_);
 }
 std::string	HttpRequest::getHeader(const std::string &key) const {
 	std::string	lowKey = toLower(key);
@@ -105,6 +109,23 @@ int	HttpRequest::getRedirectCount( ) const {
 
 void	HttpRequest::setRedirectCount( int value ) {
 	redirectCount_ = value;
+}
+
+/// @brief differs from setBody, this function adopts the body string by swapping it with the internal body_ member, avoiding a copy and improving performance.
+/// @param body 
+void	HttpRequest::adoptBody( std::string& body ) {
+	body_.swap(body);
+}
+
+void	HttpRequest::clear() {
+	std::string().swap(method_);
+	std::string().swap(url_);
+	std::string().swap(path_);
+	std::string().swap(query_);
+	std::string().swap(version_);
+	std::string().swap(body_);
+	std::map<std::string, std::string>().swap(headers_);
+	redirectCount_ = 0;
 }
 
 HttpRequest::~HttpRequest() {}

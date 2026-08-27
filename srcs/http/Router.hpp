@@ -39,6 +39,8 @@ class	Router {
 
 		void	setConfig( globalConfig* config);
 		void	setConnEnv( Connection& conn );
+
+		CgiRequestHandler&	getCgiHandler( );
 		~Router();
 };
 

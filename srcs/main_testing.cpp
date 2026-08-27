@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   main_testing.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dopereir <dopereir@student.42.fr>          +#+  +:+       +#+        */
+/*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/17 21:38:29 by dopereir          #+#    #+#             */
-/*   Updated: 2026/08/13 19:13:20 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/27 10:57:53 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,7 +33,7 @@ int	main(int ac, char** av)
 	try {
 		config = configParser().parse(av[1]);
 		//std::cout << "***** config print data at main *******" << std::endl;
-		config.printData();
+		//config.printData();
 		
 		config.initServerRoutine(webserv, config.servers);
 	}

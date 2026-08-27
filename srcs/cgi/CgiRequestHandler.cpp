@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/09 18:19:23 by dopereir          #+#    #+#             */
-/*   Updated: 2026/08/23 22:36:53 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/27 22:52:49 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,7 +64,7 @@ CgiRequestHandler::~CgiRequestHandler() {
 }
 
 void	CgiRequestHandler::setMetaVar( std::string& key, std::string& value ) {
-	_meta_vars.insert(std::pair<std::string, std::string>(key, value));
+	_meta_vars[key] = value;
 }
 
 void	CgiRequestHandler::setConfig( globalConfig* config ) {
@@ -174,24 +174,24 @@ void	CgiRequestHandler::parseCgiHttpResponse( HttpResponse &res, std::string &cg
 	size_t		headerEnd;
 
 	headerEnd = cgiOutput.find("\r\n\r\n");
-	if (headerEnd == std::string::npos) {//HERE
+	if (headerEnd == std::string::npos) {
 		throw HttpException(502, "Bad gateway: no header terminator in CGI output");
 	}
 	std::string	headerSection = cgiOutput.substr(0, headerEnd);
-	std::string	body = cgiOutput.substr(headerEnd + 4);
-	{
-		size_t	location;
-		location = headerSection.find("status:", 0);
-		if (location != std::string::npos)
-			res.setStatusBool(true);
+	if (headerSection.find("status:", 0) != std::string::npos
+			|| headerSection.find("Status:", 0) != std::string::npos) {
+		res.setStatusBool(true);
 	}
 	parseHeaderSection(headerSection, res);
-	if (body.size() > 0)
-		res.setBody(body);
+
+	cgiOutput.erase(0, headerEnd + 4);
+	if (!cgiOutput.empty()) {
+		res.adoptBody(cgiOutput);
+	}
 }
 
 void	CgiRequestHandler::handleRequest(Connection& conn) {
-	std::string	method = conn.req.getMethod();
+	const std::string&	method = conn.req.getMethod();
 
 	if (method != "GET" && method != "POST" && method != "HEAD")
 		throw HttpException(405, "Method not allowed. CGI only supports GET, POST and HEAD");
@@ -217,7 +217,7 @@ void	CgiRequestHandler::finalizeCgi(Connection& conn) {
 	type = classifyCgiResponse(conn.res);
 	switch(type) {
 		case CGI_DOCUMENT:
-			std::cout << "Log: CgiRequestHandler: CGI DOCUMENT" << std::endl;
+			std::cout << "(log): CgiRequestHandler: CGI DOCUMENT" << std::endl;
 			conn.state = WRITING;
 			break;
 		case CGI_LOCAL_REDIR:
