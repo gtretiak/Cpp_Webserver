@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/09 18:19:23 by dopereir          #+#    #+#             */
-/*   Updated: 2026/08/23 22:36:53 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/25 00:17:07 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,7 +64,7 @@ CgiRequestHandler::~CgiRequestHandler() {
 }
 
 void	CgiRequestHandler::setMetaVar( std::string& key, std::string& value ) {
-	_meta_vars.insert(std::pair<std::string, std::string>(key, value));
+	_meta_vars[key] = value;
 }
 
 void	CgiRequestHandler::setConfig( globalConfig* config ) {

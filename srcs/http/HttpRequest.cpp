@@ -47,8 +47,8 @@ void	HttpRequest::setQuery(const std::string &q) {
 void	HttpRequest::setVersion(const std::string &v) {
 	this->version_ = v;
 }
-void	HttpRequest::setBody(const std::string &b) {
-		this->body_ = b;
+void	HttpRequest::setBody(std::string b) {
+		body_.swap(b);
 }
 void	HttpRequest::setHeader(const std::string &k, const std::string &v) {
 	std::string	lowKey = toLower(k);
@@ -61,23 +61,23 @@ void	HttpRequest::setHeader(const std::string &k, const std::string &v) {
 	}
 	this->headers_[lowKey] = v;
 }
-std::string	HttpRequest::getMethod() const {
+const std::string&	HttpRequest::getMethod() const {
 	return (this->method_);
 }
-std::string	HttpRequest::getUrl() const {
+const std::string&	HttpRequest::getUrl() const {
 	return (this->url_);
 }
-std::string	HttpRequest::getPath() const {
+const std::string&	HttpRequest::getPath() const {
 	return (this->path_);
 }
-std::string	HttpRequest::getQuery() const {
+const std::string&	HttpRequest::getQuery() const {
 	return (this->query_);
 }
-std::string	HttpRequest::getVersion() const {
+const std::string&	HttpRequest::getVersion() const {
 	return (this->version_);
 }
-std::string	HttpRequest::getBody() const {
-	return (this->body_);
+const std::string&	HttpRequest::getBody() const {
+	return (body_);
 }
 std::string	HttpRequest::getHeader(const std::string &key) const {
 	std::string	lowKey = toLower(key);

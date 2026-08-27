@@ -30,6 +30,10 @@ typedef struct CgiContext {
 	struct pollfd	inPollFd;	// pollfd structure for monitoring the CGI script's input
 	size_t			bodyBytesSent;
 
+	bool			headersParsed;
+	std::string		headerBuffer;
+	std::string		pendingHeaders;
+
 	CgiContext() : inFd(-1), outFd(-1), pid(-1), outputBuffer(""), cgiLastActivity(0) {
 		pollFd.fd = -1;
 		pollFd.events = POLLIN;
@@ -38,6 +42,7 @@ typedef struct CgiContext {
 		inPollFd.fd = -1;
 		inPollFd.events = POLLOUT;
 		inPollFd.revents = 0;
+		headersParsed = false;
 	}
 	CgiContext(const CgiContext& other) : inFd(other.inFd),
 		outFd(other.outFd),
@@ -46,7 +51,10 @@ typedef struct CgiContext {
 		cgiLastActivity(other.cgiLastActivity),
 		pollFd(other.pollFd),
 		inPollFd(other.inPollFd),
-		bodyBytesSent(other.bodyBytesSent) {}
+		bodyBytesSent(other.bodyBytesSent),
+		headersParsed(other.headersParsed),
+		headerBuffer(other.headerBuffer),
+		pendingHeaders(other.pendingHeaders) {}
 
 	CgiContext& operator=(const CgiContext& other) {
 		if (this != &other) {
@@ -58,6 +66,9 @@ typedef struct CgiContext {
 			pollFd = other.pollFd;
 			inPollFd = other.inPollFd;
 			bodyBytesSent = other.bodyBytesSent;
+			headersParsed = other.headersParsed;
+			headerBuffer = other.headerBuffer;
+			pendingHeaders = other.pendingHeaders;
 		}
 		return *this;
 	}

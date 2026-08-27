@@ -172,3 +172,17 @@ void	HttpResponse::generateErrorPageResponse( const char *filepath, int errorCod
 	close(fd);
 }
 
+std::string	HttpResponse::buildHeaderString( ) const {
+	std::stringstream	ss;
+
+	ss << this->version_ << " " << this->statusCode_ << " ";
+	ss << this->statusText_ << "\r\n";
+
+	if (!this->headers_.empty())
+	{
+		for (std::map<std::string, std::string>::const_iterator i = this->headers_.begin(); i != this->headers_.end(); i++)
+		ss << i->first << ": " << i->second << "\r\n";
+	}
+	ss << "\r\n";
+	return ss.str();
+}

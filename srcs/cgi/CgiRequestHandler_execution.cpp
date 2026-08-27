@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 17:42:33 by dopereir          #+#    #+#             */
-/*   Updated: 2026/08/24 10:27:51 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/26 09:57:11 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -148,8 +148,6 @@ static std::string	resolveExecutable( const std::string& configured )
 void	CgiRequestHandler::cgiExecutor( Connection& conn ) {
 	t_ctx_exec	ctx;
 	pid_t		pid;
-
-	const std::string	requestBody = conn.req.getBody();
 
 	if (!_envp) {
 		throw HttpException(500, "Internal Error envp not valid");

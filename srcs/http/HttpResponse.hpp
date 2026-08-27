@@ -40,6 +40,7 @@ class	HttpResponse {
 
 		bool		hasHeader(const std::string &k) const;
 		void		generateErrorPageResponse( const char *filepath, int errorCode );
+		std::string	buildHeaderString() const;
 		~HttpResponse();
 };
 

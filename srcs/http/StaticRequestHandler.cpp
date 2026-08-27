@@ -61,7 +61,7 @@ std::string	StaticRequestHandler::readFile(const std::string &path) {
 void	StaticRequestHandler::writeFile(const std::string &path, const std::string &content) {
 	int	fd = open(path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
 	if (fd == -1)
-		throw HttpException(500, "Error Openning File For Writing");
+		throw HttpException(500, "Error Opening File For Writing");
 	ssize_t	bytesWritten = write(fd, content.c_str(), content.length());
 	int res = close(fd);
 	if (bytesWritten == -1 || static_cast<size_t>(bytesWritten) != content.length())
@@ -358,23 +358,41 @@ void	StaticRequestHandler::handleRequest(HttpRequest &req, HttpResponse &res) {
 		if (_server->_has_client_max_body_size && req.getBody().size() > _server->_client_max_body_size)
 			throw HttpException(413, "Request Entity Too Large");
 
-		if (_location && !_location->upload_store.empty())
-			filePath = buildFilePath(_location->upload_store, path);
-		else if (!_server->_upload_store.empty())
-			filePath = buildFilePath(_server->_upload_store, path);
+		//
+		if (_location && !_location->upload_store.empty()) {
+			//ADD in parseRequest a logic to parse the content-type to see the multipart/form-data and the boundary
+			//need to parse body to get the filename from the multipart/form-data, for now just use a unique name
+			if (_location->_root.empty())
+				filePath = buildFilePath(_server->_root, _location->upload_store);
+			else
+				filePath = buildFilePath(_location->_root, _location->upload_store);
+		}
+		else if (!_server->_upload_store.empty()) {
+			filePath = buildFilePath(_server->_root, _server->_upload_store);
+		}
 		else
 			throw HttpException(405, "Method not allowed");
+		std::cout << "\thandleRequest(): POST: filePath = " << filePath << std::endl;
 
-		if (!hasWDPermission(filePath))
-			throw HttpException(403, "Forbidden: No Write Permission");
-		std::string	body = req.getBody();
-		if (body.empty())
-			throw HttpException(400, "Bad Request: Empty Body for POST");
+		//if (!hasWDPermission(filePath))
+			//throw HttpException(403, "Forbidden: No Write Permission");
+		const std::string&	body = req.getBody();//empty body is valid for post, fill can be created, but will be empty.
+		//if (body.empty())
+			//throw HttpException(400, "Bad Request: Empty Body for POST");
+
 		std::string	uniquePath = getUniquePath(filePath);
-		writeFile(uniquePath, body);
+		std::cout << "\thandleRequest(): POST: uniquePath = " << uniquePath << std::endl;
+		writeFile(uniquePath, body);//final stage of post request.
+		
 		res.setStatus(201);
 		res.setHeader("content-type", type);
-		res.setHeader("location", "/uploads/" + getFileName(uniquePath));
+
+		if (_location && !_location->upload_store.empty())
+			res.setHeader("location", _location->upload_store + "/" + getFileName(uniquePath));
+		else if (!_server->_upload_store.empty())
+			res.setHeader("location", _server->_upload_store + "/" + getFileName(uniquePath));
+		else
+			res.setHeader("location", "/" + getFileName(uniquePath));
 		res.setBody("");
 //		std::cout << "[POST] Created: " << uniquePath << std::endl;//to be removed TODO
 	}

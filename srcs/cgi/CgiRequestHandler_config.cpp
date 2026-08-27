@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 17:54:34 by dopereir          #+#    #+#             */
-/*   Updated: 2026/08/24 10:27:13 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/26 10:33:50 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -135,20 +135,35 @@ char**	CgiRequestHandler::metaVarsToEnvp( ) {
 	return envp;
 }
 
+std::string	CgiRequestHandler::httpHeaderToCgiMetaVar( const std::string& headerName ) {
+	std::string result = "HTTP_";
+
+	for (size_t i = 0; i < headerName.size(); ++i)
+	{
+		if (headerName[i] == '-')
+			result += '_';
+		else
+			result += static_cast<char>(
+				std::toupper(static_cast<unsigned char>(headerName[i])));
+	}
+	return result;
+}
+
 void	CgiRequestHandler::extractMetaVars( HttpRequest& req ) {
-	std::set<std::string>::iterator	it = _CgiMetaVarsList.begin();
+	const std::map<std::string, std::string>& headers = req.getHeaders();
 	std::string	scriptUri;
 	std::string	pathInfo;
 	std::string	pathTranslated;
-
-	scriptUri = req.getPath();
-	pathInfo = req.getPath();
-	pathTranslated = buildCgiFilePath(getExecRoot(), req.getPath());
 
 	if (!_serverSetting)
 		throw (HttpException(500, "No server configuration available"));
 	if (!_locSetting)
 		std::cout << "\tNo location block configured for current cgi request" << std::endl;
+
+	scriptUri = req.getPath();
+	pathInfo = req.getPath();
+	pathTranslated = buildCgiFilePath(getExecRoot(), req.getPath());
+
 	insertStaticMetaVars( );
 
 	_meta_vars["SERVER_PROTOCOL"] = req.getVersion();
@@ -175,13 +190,13 @@ void	CgiRequestHandler::extractMetaVars( HttpRequest& req ) {
 		else
 			_meta_vars["CONTENT_TYPE"] = "";
 	}
-	for (; it != _CgiMetaVarsList.end(); ++it) {
-		if (req.hasHeader(*it)) {
-			std::string	key = *it;
-			std::string	value = req.getHeader(*it);
-			setMetaVar(key, value);
-		}
+	for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it) {
+		if (it->first == "content-length" || it->first == "content-type")
+			continue;
+		std::string cgiVarName = httpHeaderToCgiMetaVar(it->first);
+		_meta_vars[cgiVarName] = it->second;
 	}
+	
 	//std::cout << "\n*************** printMetaVars() DEBUG: *************** " << std::endl;
 	//printMetaVars( );
 	//std::cout << "\n*************** printMetaVars DEBUG (END): *************** " << std::endl;

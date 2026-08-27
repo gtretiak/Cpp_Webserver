@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 21:03:51 by nogioni-          #+#    #+#             */
-/*   Updated: 2026/08/24 10:35:23 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/27 01:31:32 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -278,7 +278,7 @@ locationConfig *EventLoop::findBestLocation(serverConfig &server, const std::str
 
 void EventLoop::readClient(int clientFd)
 {
-	char		buffer[8192];
+	char		buffer[65536];
 	Connection	&conn = _connections[clientFd];
 
 
@@ -321,13 +321,13 @@ void EventLoop::readClient(int clientFd)
 				return;
 
 			//DEBUG , remove this block, only used to check raw request received from client, last request only
-			int fd = open("tester_logs/log_1.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+			/*int fd = open("tester_logs/log_1.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
 			if (fd != -1) {
 				write(fd, "\t----- RAW REQUEST ------", 26);
 				write(fd, conn.readBuffer.c_str(), conn.readBuffer.size());
 				write(fd, "\n\t----- END REQUEST -----\n", 27);
 				close(fd);
-			}
+			}*/
 
 			size_t consumed = parser.parseRequest(conn.readBuffer, &conn.req);
 			conn.readBuffer.erase(0, consumed);
@@ -502,7 +502,7 @@ void	EventLoop::continueCgi( int pipeFd ) {
 
 	try {
 		conn.setConfig(_config);
-		conn.finalizeCgi(conn);
+		conn.finalizeCgi(conn);//adapt finalizeCgi for streaming cgi data
 	}
 	catch (const HttpException& e) {
 		std::cout << e.what() << std::endl;
@@ -539,6 +539,7 @@ void	EventLoop::continueCgi( int pipeFd ) {
 		}
 		return ;
 	}
+	//THIS BLOCK ABOVE MAY NEED ADAPTATION. if we send data in chunks
 	size_t	bodySize = conn.res.getBody().size();
 	if (bodySize > 0) {
 		std::stringstream	ss;
