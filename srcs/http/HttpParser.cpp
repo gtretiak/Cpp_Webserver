@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/27 10:42:25 by gtretiak          #+#    #+#             */
-/*   Updated: 2026/08/13 20:12:49 by gtretiak         ###   ########.fr       */
+/*   Updated: 2026/08/27 10:39:33 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -210,8 +210,8 @@ void	HttpParser::parseBody(std::string &buf, HttpRequest *req) {
 		if (static_cast<size_t>(len) > _maxBodySize)
 			throw HttpException(413, "Payload Too Large");
 		if (static_cast<size_t>(len) < buf.size())
-		       throw HttpException(400, "Extra Data After Body");
-		req->setBody(buf.substr(0, len));
+			throw HttpException(400, "Extra Data After Body");
+		req->adoptBody(buf);
 	}
 	else // chunked
 	{
@@ -234,7 +234,7 @@ void	HttpParser::parseBody(std::string &buf, HttpRequest *req) {
 			res += buf.substr(i, chunkSize);
 			i += chunkSize + 2;
 		}
-		req->setBody(res);
+		req->adoptBody(res);
 	}
 }
 

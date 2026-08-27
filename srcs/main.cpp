@@ -114,7 +114,7 @@ static int runHttpTests(const globalConfig &config)
 			handler->handleRequest(req, response);			  // same
 			req.setHeader("cookie", response.getHeader("set-cookie"));
 			
-			*/// here should be conn.writeBuffer = res.toString() to be called from the outside
+			*/
 		}
 		catch (const HttpException &e)
 		{ // block should be reviewed

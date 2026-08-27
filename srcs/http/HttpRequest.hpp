@@ -40,6 +40,9 @@ class	HttpRequest {
 		void	incrementRedirectCount();
 		int		getRedirectCount( ) const;
 		void	setRedirectCount( int value );
+		void	adoptBody( std::string& body );
+
+		void	clear();
 
 		~HttpRequest();
 };

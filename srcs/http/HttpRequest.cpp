@@ -47,6 +47,10 @@ void	HttpRequest::setQuery(const std::string &q) {
 void	HttpRequest::setVersion(const std::string &v) {
 	this->version_ = v;
 }
+
+/// @brief Differs from adaptBody, this function sets the body string by copying
+/// @brief it into the internal body_ member, which may involve a copy and can be less efficient than adoptBody().
+/// @param b 
 void	HttpRequest::setBody(std::string b) {
 		body_.swap(b);
 }
@@ -105,6 +109,23 @@ int	HttpRequest::getRedirectCount( ) const {
 
 void	HttpRequest::setRedirectCount( int value ) {
 	redirectCount_ = value;
+}
+
+/// @brief differs from setBody, this function adopts the body string by swapping it with the internal body_ member, avoiding a copy and improving performance.
+/// @param body 
+void	HttpRequest::adoptBody( std::string& body ) {
+	body_.swap(body);
+}
+
+void	HttpRequest::clear() {
+	std::string().swap(method_);
+	std::string().swap(url_);
+	std::string().swap(path_);
+	std::string().swap(query_);
+	std::string().swap(version_);
+	std::string().swap(body_);
+	std::map<std::string, std::string>().swap(headers_);
+	redirectCount_ = 0;
 }
 
 HttpRequest::~HttpRequest() {}
