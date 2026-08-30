@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 20:15:46 by nogioni-          #+#    #+#             */
-/*   Updated: 2026/06/21 11:31:16 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/31 00:15:59 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,9 @@ struct	Listen;
 class Socket
 {
 	private:
-		int	_fd; 
+		int			_fd;
+		bool		_isAbstract;
+		std::string	_path;
 	public:
 		Socket();
 		~Socket();

@@ -1,0 +1,9 @@
+#1 handle timeout in cgi
+
+#2 further test invalid directives at config file
+
+#3 stress test more with siege and wrk
+
+#4 create more conf files for different scenarios
+
+#5 create more cgi scripts for testing, e.g: a script that sleeps for a long time

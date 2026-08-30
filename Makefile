@@ -36,7 +36,7 @@ SERVER_SRCS =	Connection.cpp \
 				EventLoop.cpp \
 				Server.cpp
 
-SRC =	$(SRC_DIR)main_testing.cpp \
+SRC =	$(SRC_DIR)main.cpp \
 		$(addprefix $(SRC_DIR)$(HTTP_DIR), $(HTTP_SRCS)) \
 		$(addprefix $(SRC_DIR)$(CGI_DIR), $(CGI_SRCS)) \
 		$(addprefix $(SRC_DIR)$(CONFIG_DIR), $(CONFIG_SRCS)) \

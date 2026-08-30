@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 20:19:23 by nogioni-          #+#    #+#             */
-/*   Updated: 2026/08/11 22:06:23 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/31 00:10:51 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,7 @@
 #include <sys/un.h>
 #include <netdb.h>
 
-Socket::Socket() : _fd(-1) {}
+Socket::Socket() : _fd(-1), _isAbstract(false), _path() {}
 
 Socket::~Socket() {
 	closeSocket();
@@ -140,19 +140,29 @@ void	Socket::setUnixConn( Listen target ) {
 	}
 	memset(&address, 0, sizeof(address));
 	address.sun_family = AF_UNIX;
-	namelen = std::min(target.addr.size(), sizeof(address.sun_path) - 1);
-	address.sun_path[0] = '\0';
-	std::memcpy(address.sun_path + 1, target.addr.data(), namelen);
-	servlen = static_cast<socklen_t>(offsetof(struct sockaddr_un, sun_path) + 1 + namelen);
+	if (!target.addr.empty() && (target.addr[0] == '\0' || target.addr[0] == '@')) {
+		std::string	path = target.addr.substr(1);
+		_isAbstract = true;
+
+		namelen = std::min(path.size(), sizeof(address.sun_path) - 2);
+		address.sun_path[0] = '\0';
+		std::memcpy(address.sun_path + 1, path.data(), namelen);
+		servlen = static_cast<socklen_t>(offsetof(struct sockaddr_un, sun_path) + 1 + namelen);
+	}
+	else {
+		_isAbstract = false;
+		_path = target.addr;
+		
+		unlink(_path.c_str());
+		namelen = std::min(_path.size(), sizeof(address.sun_path) - 1);
+		std::memcpy(address.sun_path, _path.data(), namelen);
+		address.sun_path[namelen] = '\0';
+		servlen = sizeof(struct sockaddr_un);
+	}
 
 	if (bind(_fd, reinterpret_cast<struct sockaddr *>(&address), servlen) < 0) {
-		std::cout << "_fd: " << _fd
-		<< "\ntarget addr: " << target.addr
-		<< "\ntarget port: " << target.port
-		<< "\ntarget type: " << target.type
-		<< std::endl;
-		closeSocket();
 		std::cout << strerror(errno) << std::endl;
+		closeSocket();
 		throw std::runtime_error("Error: setUnixConn(): biding failed");
 	}
 	if (listen(_fd, SOMAXCONN) < 0) {
@@ -255,6 +265,10 @@ void	Socket::closeSocket()
 	{
 		close(_fd);
 		_fd = -1;
+	}
+	if (!_isAbstract && !_path.empty()) {
+		unlink(_path.c_str());
+		std::string().swap(_path);
 	}
 }
 

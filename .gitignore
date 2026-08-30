@@ -1,2 +1,5 @@
 *.o
 run
+cgi_tester
+tester
+documentation
