@@ -12,6 +12,7 @@ Connection::Connection() : CgiRequestHandler(), matchedServer(NULL), matchedLoca
 	lastActivity = std::time(NULL);
 	req = HttpRequest();
 	res = HttpResponse();
+	state = READING;
 	cgiExecutable = "";
 	cgiData = CgiContext();
 }
@@ -27,6 +28,7 @@ Connection::Connection(int clientFd) : CgiRequestHandler(), fd(clientFd), matche
 	lastActivity = std::time(NULL);
 	req = HttpRequest();
 	res = HttpResponse();
+	state = READING;
 	cgiExecutable = "";
 	cgiData = CgiContext();
 }

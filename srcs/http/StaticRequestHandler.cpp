@@ -39,7 +39,7 @@ bool	StaticRequestHandler::hasIndexDirective() {
 std::string	StaticRequestHandler::readFile(const std::string &path) {
 	int	fd = open(path.c_str(), O_RDONLY);
 
-	std::cout << "\t\t ****** StaticRequestHandler::readFile(): Opening file: " << path << std::endl;
+	//std::cout << "\t\t ****** StaticRequestHandler::readFile(): Opening file: " << path << std::endl;
 	if (fd < 0)
 		throw HttpException(404, "File Not Found" + path);
 	std::string	content;
@@ -112,7 +112,7 @@ std::string StaticRequestHandler::getRoot() const
 		return _location->_root;
 	if (_server && !_server->_root.empty())
 		return _server->_root;
-	throw HttpException(500, "No root directive configured");
+	throw HttpException(403, "Forbidden");
 }
 
 /// @brief The behavior of remove the location block match prefix is exclusively to webserv project.
@@ -162,7 +162,6 @@ bool StaticRequestHandler::isRegularFile(const std::string &path) const
 std::string	StaticRequestHandler::searchIndexFiles( const std::string &dirPath ) const
 {
 	const std::vector<std::string>	*indexes;
-	struct dirent					*entry;
 
 	indexes = NULL;
 	if (_location && !_location->_index.empty())
@@ -171,57 +170,68 @@ std::string	StaticRequestHandler::searchIndexFiles( const std::string &dirPath )
 		indexes = &_server->_index;
 
 	if (indexes != NULL) {
-		std::cout << "StaticRequestHandler::searchIndexFile(): Using index files from " << (_location ? "location" : "server") << std::endl;
-		std::cout << "Configured index files: \t";
-		for (size_t i = 0; i < indexes->size(); ++i)
+		//std::cout << "\nStaticRequestHandler::searchIndexFile(): Using index files from " << (_location ? "<location>" : "<server>") << std::endl;
+		//std::cout << "Configured index files: \t";
+		/*for (size_t i = 0; i < indexes->size(); ++i)
 		{
 			std::cout << (*indexes)[i];
 			if (i < indexes->size() - 1)
 				std::cout << ", ";
-		}
+		}*/
 	}
 	else {
-		std::cout << "	StaticRequestHandler::searchIndexFiles(): No index files configured" << std::endl;
+		//std::cout << "	StaticRequestHandler::searchIndexFiles(): No index files configured" << std::endl;
 		return ("");
 	}
 
+	std::string	baseDir = dirPath;
+	if (!baseDir.empty() && baseDir[baseDir.size() - 1] == '/')
+		baseDir.erase(baseDir.size() - 1);
 
-	//open dirpath
-	DIR	*dir = opendir(dirPath.c_str());
-	if (!dir) {
-		throw HttpException(500, "Internal Error: failed to open dirpath of index files");
-	}
+	for (size_t i = 0; i < indexes->size(); ++i) {
+		std::string	pattern = (*indexes)[i];
 
-	//search for any match within the indexes.
-	while ((entry = readdir(dir)) != NULL) {
-		std::string	filename(entry->d_name);
+		// Strip leading slash from index path ("/html/index.html" -> "html/index.html")
+		if (!pattern.empty() && pattern[0] == '/')
+			pattern = pattern.substr(1);
 
-		if (filename == "." || filename == "..")
-			continue;
-		for (std::vector<std::string>::const_iterator it = indexes->begin(); it != indexes->end(); ++it) {
-			const std::string &pattern = *it;
+		// Case 1: wildcard ("*.html")
+		if (!pattern.empty() && pattern[0] == '*') {
+			std::string	suffix = pattern.substr(1);
+			DIR			*dir = opendir(baseDir.c_str());
+			if (!dir)
+				continue;
 
-			//wildcard suffix match
-			if (!pattern.empty() && pattern[0] == '*') {
-				std::string suffix = pattern.substr(1);//get extension after '*'
+			struct dirent	*entry;
+			while ((entry = readdir(dir)) != NULL) {
+				std::string filename(entry->d_name);
+				if (filename == "." || filename == "..") continue;
 
 				if (filename.size() >= suffix.size() &&
-					filename.compare(filename.size() - suffix.size(),
-									suffix.size(), suffix) == 0)
+					filename.compare(filename.size() - suffix.size(), suffix.size(), suffix) == 0) 
 				{
+					std::string fullPath = baseDir + "/" + filename;
 					closedir(dir);
-					return dirPath + "/" + filename;
+					return fullPath;
 				}
 			}
-			//literal match
-			if (filename == pattern) {
-				closedir(dir);
-				return std::string(dirPath + "/" + filename);
+			closedir(dir);
+		} 
+		// Case 2: direct file path ("html/index.html" or "index.html")
+		else {
+			std::string	candidatePath = baseDir + "/" + pattern;
+			struct stat	st;
+
+			// check file
+			if (stat(candidatePath.c_str(), &st) == 0 && S_ISREG(st.st_mode)) {
+				//std::cout << "\t\tDEBUG: searchIndexFiles(): Match found: " << candidatePath << std::endl;
+				return candidatePath;
 			}
 		}
 	}
-	closedir(dir);
-	return ("");
+
+	//std::cout << "\t\tDEBUG: searchIndexFiles(): No valid index file found in: <" << dirPath << ">" << std::endl;
+	return "";
 }
 
 std::string StaticRequestHandler::resolveIndexFile(std::string &dirPath)
@@ -229,7 +239,7 @@ std::string StaticRequestHandler::resolveIndexFile(std::string &dirPath)
 	std::string	candidate;
 
 	candidate = searchIndexFiles(dirPath);
-	//std::cout << "\t\tDEBUG: resolveIndexFile():candidate = " << candidate << std::endl;
+	// "\t\tDEBUG: resolveIndexFile():candidate = " << candidate << std::endl;
 	if (isRegularFile(candidate))
 		return candidate;
 	return "";
@@ -309,7 +319,7 @@ void	StaticRequestHandler::handleRequest(HttpRequest &req, HttpResponse &res) {
 	std::string	root = getRoot();
 	std::string	filePath = buildFilePath(root, path);
 	
-	std::cout << "type(text/html?:[" << type << "],\npath:[" << path << "]\nfilepath:[" << filePath << "]" << std::endl;
+	//std::cout << "type(text/html?:[" << type << "],\npath:[" << path << "]\nfilepath:[" << filePath << "]" << std::endl;
 	res.setHeader("connection", "keep-alive");//if the connection is still open
 	res.setHeader("cache-control", "public, max-age=3600");
 	//check if the there is any header in the request that says otherwise
@@ -372,7 +382,7 @@ void	StaticRequestHandler::handleRequest(HttpRequest &req, HttpResponse &res) {
 		}
 		else
 			throw HttpException(405, "Method not allowed");
-		std::cout << "\thandleRequest(): POST: filePath = " << filePath << std::endl;
+		//std::cout << "\thandleRequest(): POST: filePath = " << filePath << std::endl;
 
 		//if (!hasWDPermission(filePath))
 			//throw HttpException(403, "Forbidden: No Write Permission");
@@ -381,7 +391,7 @@ void	StaticRequestHandler::handleRequest(HttpRequest &req, HttpResponse &res) {
 			//throw HttpException(400, "Bad Request: Empty Body for POST");
 
 		std::string	uniquePath = getUniquePath(filePath);
-		std::cout << "\thandleRequest(): POST: uniquePath = " << uniquePath << std::endl;
+		//std::cout << "\thandleRequest(): POST: uniquePath = " << uniquePath << std::endl;
 		writeFile(uniquePath, body);//final stage of post request.
 		
 		res.setStatus(201);

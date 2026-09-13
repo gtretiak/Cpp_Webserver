@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 21:03:53 by nogioni-          #+#    #+#             */
-/*   Updated: 2026/08/14 23:04:08 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/31 23:46:48 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,8 @@
 #include <signal.h>
 #include "../config/serverConfig.hpp"
 #include "../config/locationConfig.hpp"
+
+static const time_t CGI_TIMEOUT = 60;//seconds
 
 extern volatile sig_atomic_t	g_shutdown;
 
@@ -54,6 +56,7 @@ class	EventLoop
 		void	run(globalConfig& config);	//main function of the server
 		void	stop();	//ends loop
 
+		void	reapTimedOutCgi();
 		void	writeCgiInput(int fd);
 		void	abortCgiInput(int fd);
 
@@ -74,9 +77,8 @@ class	EventLoop
 		int		matchConnToServerIndex(int clientFd);
 		void	handleHttpError(int clientFd, int errorCode);
 
-		locationConfig *findBestLocation(serverConfig &server, const std::string &path);
-		bool locationMatches(const std::string &locationPath, const std::string &requestPath) const;
-		size_t getMaxBodySizeForRequest(const std::string &readBuffer, int serverIndex);
+		locationConfig	*findBestLocation(serverConfig &server, const std::string &path);
+		bool			locationMatches(const std::string &locationPath, const std::string &requestPath) const;
 };
 
 #endif
