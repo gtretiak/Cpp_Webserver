@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 21:03:51 by nogioni-          #+#    #+#             */
-/*   Updated: 2026/08/27 22:51:39 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/09/13 16:34:32 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -79,6 +79,54 @@ void EventLoop::addListenFd(int fd, int server_idx)
 	_listenFdsMAP.insert(std::make_pair(fd, server_idx));
 }
 
+void	EventLoop::reapTimedOutCgi() {
+	std::map<int, Connection>::iterator	it = _connections.begin();
+	time_t	currentTime = time(NULL);
+	int		status;
+
+	while (waitpid(-1, &status, WNOHANG) > 0)
+		;
+
+	for (; it != _connections.end(); ++it) {
+		Connection&	conn = it->second;
+
+		if (conn.state == RUNNING &&
+			conn.cgiData.pid != -1 &&
+			(currentTime - conn.cgiData.cgiLastActivity) > CGI_TIMEOUT)
+		{
+			std::cout << "\n\t(log) CGI timeout for client fd: " << conn.fd << ", killing CGI process with pid: " << conn.cgiData.pid << "\n" << std::endl;
+			if (conn.cgiData.pid > 0) {
+				kill(conn.cgiData.pid, SIGKILL);
+				waitpid(conn.cgiData.pid, NULL, WNOHANG);
+			}
+			if (conn.cgiData.inFd != -1) {
+				removeFdFromPollFds(conn.cgiData.inFd);
+				_cgiInfdToPollfd.erase(conn.cgiData.inFd);
+				close(conn.cgiData.inFd);
+				conn.cgiData.inFd = -1;
+			}
+			if (conn.cgiData.outFd != -1) {
+				removeFdFromPollFds(conn.cgiData.outFd);
+				_cgifdToPollfd.erase(conn.cgiData.outFd);
+				close(conn.cgiData.outFd);
+				conn.cgiData.outFd = -1;
+			}
+			conn.cgiData.pid = -1;
+			handleHttpError(conn.fd, 504);// 504 Gateway Timeout
+			conn.state = CLOSING;
+
+			const std::string &headerStr = conn.res.buildHeaderString();
+			const std::string &body = conn.res.getBody();
+
+			conn.writeBuffer.clear();
+			conn.writeBuffer.reserve(headerStr.size() + body.size());
+			conn.writeBuffer = headerStr;
+			conn.writeBuffer += body;
+			updateClientEvents(conn.fd);
+		}
+	}
+}
+
 void	EventLoop::abortCgiInput(int fd) {
 	int			clientFd = _cgiInfdToPollfd[fd];
 	Connection	&conn = _connections[clientFd];
@@ -100,8 +148,10 @@ void	EventLoop::writeCgiInput(int fd) {
 
 	remaining = requestBody.size() - conn.cgiData.bodyBytesSent;
 	sent = write(fd, requestBody.c_str() + conn.cgiData.bodyBytesSent, remaining);
-	if (sent > 0)
+	if (sent > 0) {
 		conn.cgiData.bodyBytesSent += static_cast<size_t>(sent);
+		conn.cgiData.cgiLastActivity = time(NULL);
+	}
 	else if (sent == -1) {
 		abortCgiInput(fd);
 		return ;
@@ -137,6 +187,8 @@ void EventLoop::run(globalConfig& config)
 				continue;
 			throw std::runtime_error("poll() failed");
 		}
+		
+		reapTimedOutCgi();
 
 		//iterates backards bacause closeClient() might remove elements from the array
 		for (int i = static_cast<int>(_pollFds.size()) - 1; i >= 0; --i)
@@ -327,21 +379,12 @@ void EventLoop::readClient(int clientFd)
 			if (!parser.isRequestComplete(conn.readBuffer))
 				return;
 
-			//DEBUG , remove this block, only used to check raw request received from client, last request only
-			/*int fd = open("tester_logs/log_1.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
-			if (fd != -1) {
-				write(fd, "\t----- RAW REQUEST ------", 26);
-				write(fd, conn.readBuffer.c_str(), conn.readBuffer.size());
-				write(fd, "\n\t----- END REQUEST -----\n", 27);
-				close(fd);
-			}*/
-
 			size_t consumed = parser.parseRequest(conn.readBuffer, &conn.req);
 			conn.readBuffer.erase(0, consumed);
 
-			std::cout << "\n************** printRequest() **************" << std::endl;
+			//std::cout << "\n************** printRequest() **************" << std::endl;
 			//printRequest(conn.req);
-			std::cout << "\n************** printRequest() (END) **************" << std::endl;
+			//std::cout << "\n************** printRequest() (END) **************" << std::endl;
 
 			Router router;
 			router.setConfig(_config);
@@ -396,7 +439,7 @@ void EventLoop::readClient(int clientFd)
 		}
 		catch (const HttpException &e)
 		{
-			std::cout << e.what() << std::endl;
+			std::cout << "\n" << e.code() << " " << e.what() << std::endl;
 			std::cout << "strerror: " << strerror(errno) << std::endl;
 
 			conn.state = CLOSING;
@@ -502,6 +545,7 @@ void	EventLoop::continueCgi( int pipeFd ) {
 	
 	if (bytesRead > 0) {
 		conn.cgiData.outputBuffer.append(buf, bytesRead);
+		conn.cgiData.cgiLastActivity = time(NULL);
 		return ;
 	}
 	removeFdFromPollFds(pipeFd);
@@ -637,7 +681,7 @@ void	EventLoop::handleHttpError( int clientFd, int errorCode ) {
 		return ;
 	}
 	if (_config->servers[idx]._error_pages.empty()) {
-		std::cout << "********** (handleHttpError): server does not have any error_page directive configured **********" << std::endl;
+		//std::cout << "********** (handleHttpError): server does not have any error_page directive configured **********" << std::endl;
 		conn.res.setStatus(errorCode);
 		conn.res.generateErrorPageResponse(NULL, errorCode);
 	}
@@ -646,15 +690,15 @@ void	EventLoop::handleHttpError( int clientFd, int errorCode ) {
 
 		it = _config->servers[idx]._error_pages.find(errorCode);
 		if (it != _config->servers[idx]._error_pages.end()) {//find error_page directive
-			std::cout << "********** Error page generated from config file **********" << std::endl;
+			//std::cout << "********** Error page generated from config file **********" << std::endl;
 			//it->second is the path to error page
 			std::string	filepath = _config->servers[idx]._root + it->second;
 			conn.res.setStatus(errorCode);
 			conn.res.generateErrorPageResponse(filepath.c_str(), errorCode);
 			
-			std::cout << "********** Error page generated from config file **********" << std::endl;
-			printResponse(conn.res);
-			std::cout << "********** Error page generated from config file (END) **********" << std::endl;
+			//std::cout << "********** Error page generated from config file **********" << std::endl;
+			//printResponse(conn.res);
+			//std::cout << "********** Error page generated from config file (END) **********" << std::endl;
 		}
 		else { //do not find the error code among the error_pages configured
 			conn.res.setStatus(errorCode);

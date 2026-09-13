@@ -95,7 +95,7 @@ bool	Router::isCgiRequest( std::string& target ) {
 	if (dotPos == std::string::npos)
 		return false;
 	extension = target.substr(dotPos);
-	if (CurrentConn_->matchedLocation->_has_cgi == true) {
+	if (CurrentConn_->matchedLocation && CurrentConn_->matchedLocation->_has_cgi == true) {
 
 		it = CurrentConn_->matchedLocation->_cgi.cgi_extension.find(extension);
 		
@@ -113,7 +113,7 @@ bool	Router::isCgiRequest( std::string& target ) {
 			return true;
 		}
 	}
-	if (CurrentConn_->matchedServer->_has_cgi == true) {
+	if (CurrentConn_->matchedServer && CurrentConn_->matchedServer->_has_cgi == true) {
 
 		it = CurrentConn_->matchedServer->_cgi.cgi_extension.find(extension);
 		
@@ -217,7 +217,7 @@ int Router::resolve(HttpRequest &req, HttpResponse &res)
 	}
 	else
 	{
-		std::cout << "\n ************** ENTERED STATIC REQUEST BLOCK (GET, POST DELETE)" << std::endl;
+		std::cout << "\n ************** STATIC REQUEST BLOCK (GET, POST DELETE)" << std::endl;
 		staticHandler.setConfig(config_);
 		staticHandler.setContext(server, location);
 		staticHandler.handleRequest(req, res);

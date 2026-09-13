@@ -6,7 +6,7 @@
 /*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 17:42:33 by dopereir          #+#    #+#             */
-/*   Updated: 2026/08/27 22:47:51 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/08/31 21:17:43 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -177,7 +177,7 @@ void	CgiRequestHandler::cgiExecutor( Connection& conn ) {
 	conn.cgiData.pid = pid;
 	conn.cgiData.inFd = ctx.stdin_pipe[1];
 	conn.cgiData.outFd = ctx.stdout_pipe[0];
-	conn.cgiData.cgiLastActivity = time(NULL) + 10;
+	conn.cgiData.cgiLastActivity = time(NULL);
 
 	conn.cgiData.pollFd.fd = conn.cgiData.outFd;
 	conn.cgiData.pollFd.events = POLLIN;

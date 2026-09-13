@@ -38,6 +38,9 @@ std::string	createPrettyErrorPage(int code) {
 		case 400:
 			page += "400 Bad Request";
 			break;
+		case 401:
+			page += "401 Unauthorized";
+			break;
 		case 403:
 			page += "403 Forbidden";
 			break;
@@ -50,6 +53,12 @@ std::string	createPrettyErrorPage(int code) {
 		case 413:
 			page += "413 Payload Too Large";
 			break;
+		case 414:
+			page += "414 URI Too Long";
+			break;
+		case 415:
+			page += "415 Unsupported Media Type";
+			break;
 		case 500:
 			page += "500 Internal Server Error";
 			break;
@@ -61,6 +70,15 @@ std::string	createPrettyErrorPage(int code) {
 			break;
 		case 503:
 			page += "503 Service Unavailable";
+			break;
+		case 504:
+			page += "504 Gateway Timeout";
+			break;
+		case 505:
+			page += "505 HTTP Version Not Supported";
+			break;
+		case 508:
+			page += "508 Loop Detected";
 			break;
 		default:
 			page += ft_int_to_string(code);
