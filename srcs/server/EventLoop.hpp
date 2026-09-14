@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   EventLoop.hpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: dopereir <dopereir@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 21:03:53 by nogioni-          #+#    #+#             */
-/*   Updated: 2026/08/31 23:46:48 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/09/14 12:46:39 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,7 +43,6 @@ class	EventLoop
 		std::map<int, int>				_cgifdToPollfd; //maps the cgi script fd to the pollfd index, so we can find it in the _pollFds vector
 		std::map<int, int>				_cgiInfdToPollfd; //maps the cgi script input fd to the pollfd index, so we can find it in the _pollFds vector
 		globalConfig*					_config;		//pointer to the global config, used to route requests
-		Router*							_router;		//used to route requests to the correct handler
 		bool							_running; //controls the main loop
 
 	public:

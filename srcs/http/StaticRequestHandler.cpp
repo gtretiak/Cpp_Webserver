@@ -29,9 +29,9 @@ void StaticRequestHandler::setContext(serverConfig *server, locationConfig *loca
 }
 
 bool	StaticRequestHandler::hasIndexDirective() {
-	if (!_location->_index.empty())
+	if (!_location || !_location->_index.empty())
 		return true;
-	if (!_server->_index.empty())
+	if (!_server || !_server->_index.empty())
 		return true;
 	return false;
 }
@@ -60,6 +60,7 @@ std::string	StaticRequestHandler::readFile(const std::string &path) {
 
 void	StaticRequestHandler::writeFile(const std::string &path, const std::string &content) {
 	int	fd = open(path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+	//std::cout << "\t\t ****** StaticRequestHandler::writeFile(): Writing file: " << path << std::endl;
 	if (fd == -1)
 		throw HttpException(500, "Error Opening File For Writing");
 	ssize_t	bytesWritten = write(fd, content.c_str(), content.length());
@@ -122,7 +123,12 @@ std::string StaticRequestHandler::getRoot() const
 std::string StaticRequestHandler::buildFilePath(const std::string &root, const std::string &path) const
 {
 	std::string	remainder;
-	std::string	locPrefix = _location->_path;
+	std::string	locPrefix;
+
+	if (_location && !_location->_path.empty())
+		locPrefix = _location->_path;
+	else
+		locPrefix = "";
 
 	if (path.compare(0, locPrefix.size(), locPrefix) == 0)
 		remainder = path.substr(locPrefix.size());
@@ -297,14 +303,20 @@ std::string StaticRequestHandler::generateAutoindexPage(const std::string &reque
 void	StaticRequestHandler::handleRequest(HttpRequest &req, HttpResponse &res) {
 	std::string	path = req.getPath();
 	std::string	method = req.getMethod();
-	bool		isAllowed = true;
+	bool		isAllowed;
 
 	if (method == "GET")
-		isAllowed = this->_location->_allowed_methods.GET;
+		isAllowed = (_location && _location->_has_limit_except)
+			? _location->_allowed_methods.GET
+			: (!_server || !_server->_has_limit_except || _server->_allowed_methods.GET);
 	else if (method == "POST")
-		isAllowed = this->_location->_allowed_methods.POST;
+		isAllowed = (_location && _location->_has_limit_except)
+			? _location->_allowed_methods.POST
+			: (!_server || !_server->_has_limit_except || _server->_allowed_methods.POST);
 	else if (method == "DELETE")
-		isAllowed = this->_location->_allowed_methods.DELETE;
+		isAllowed = (_location && _location->_has_limit_except)
+			? _location->_allowed_methods.DELETE
+			: (!_server || !_server->_has_limit_except || _server->_allowed_methods.DELETE);
 	else
 		throw HttpException(405, "Method Not Allowed: " + method);
 	if (!isAllowed)

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Socket.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: dopereir <dopereir@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 20:19:23 by nogioni-          #+#    #+#             */
-/*   Updated: 2026/08/31 00:10:51 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/09/14 17:05:13 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,7 +41,7 @@ void	Socket::setPortOnlyConn( Listen target ) {
 	opt = 1;
 
 	//MAYBE ADD SO_KEEPALIVE, depends on directive and server config
-	if (setsockopt(_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)) < 0) {
+	if (setsockopt(_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
 		closeSocket();
 		throw std::runtime_error("Error: setsockopt(): failed");
 	}
@@ -75,6 +75,7 @@ void	Socket::setIpHostPortConn( Listen target, Listen::listenType type ) {
 	int					rc;
 	int					fd = -1;
 	int					opt = 1;
+	bool			bound = false;
 
 	std::memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;
@@ -106,14 +107,11 @@ void	Socket::setIpHostPortConn( Listen target, Listen::listenType type ) {
 			closeSocket(fd);
 			continue ;
 		}
-		if (setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)) < 0) {
-			// if you require SO_REUSEPORT, treat as error; otherwise you can ignore
-			// close(fd); fd = -1; continue;
-		}
 		setNonBlocking(fd);
 		if (bind(fd, tmp->ai_addr, tmp->ai_addrlen) == 0) {
 			if (listen(fd, SOMAXCONN) == 0) {
 				_fd = fd;
+				bound = true;
 				break;
 			}
 		}
@@ -124,7 +122,7 @@ void	Socket::setIpHostPortConn( Listen target, Listen::listenType type ) {
 		closeSocket(fd);
 	}
 	freeaddrinfo(res);
-	if (fd == -1)
+	if (!bound)
 		throw std::runtime_error("Error: setIpHostPortConn(): bind/listen failed for any resolved address");
 }
 
@@ -190,8 +188,7 @@ void	Socket::create(Listen target) {
 			setUnixConn(target);
 			break;
 		default:
-			std::cout << "Failed to create socket: missing type" << std::endl;
-			break;
+			throw std::runtime_error("Error: create(): invalid socket type");
 	}
 }
 
@@ -272,7 +269,7 @@ void	Socket::closeSocket()
 	}
 }
 
-void	Socket::closeSocket(int fd)
+void	Socket::closeSocket(int &fd)
 {
 	if (fd != -1)
 	{
@@ -283,20 +280,11 @@ void	Socket::closeSocket(int fd)
 
 void	Socket::setNonBlocking(int fd)
 {
-	int flags;
-
-	//F_GETFL: get the actual flags
-	flags = fcntl(fd, F_GETFL, 0);
-	if (flags == -1)
-	{
-		closeSocket();
-		throw std::runtime_error("fcntl(F_GETFL) failed");
-	}
 
 	//F_SETFL: take the actual flags and adds O_NONBLOCK
-	if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1)
+	if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1)
 	{
-		closeSocket();
+		closeSocket(fd);
 		throw std::runtime_error("fcntl(F_SETFL) failed");
 	}
 }

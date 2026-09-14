@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   configParser.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dopereir <dopereir@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: dopereir <dopereir@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 09:18:39 by dopereir          #+#    #+#             */
-/*   Updated: 2026/08/24 10:53:28 by dopereir         ###   ########.fr       */
+/*   Updated: 2026/09/14 15:58:50 by dopereir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -237,7 +237,7 @@ Listen configParser::parseListen(const std::string& value, size_t line) const {
 		return listen;
 	}
 	if (isIPv4(value)) {
-		listen.port = 80;
+		listen.port = 8080;
 		listen.addr = value;
 		listen.type = Listen::IP_PORT;
 		return listen;
