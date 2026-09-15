@@ -4,12 +4,12 @@
 
 ## Description
 
-Webserv is a fully functional HTTP/1.1-compliant web server written in C++98. The goal
-of the project is to understand the inner workings of the HyperText Transfer Protocol
+Webserv is a fully functional HTTP/1.1-compliant web server written in C++98 without external libraries.
+The goal of the project is to understand the inner workings of the HyperText Transfer Protocol
 (HTTP) by building a server from scratch — without relying on any external or Boost
-libraries. The server is non-blocking, event-driven (using poll() or equivalent), chunked transfer decoding, and NGINX-inspired configuration with no external libraries, supports multiple virtual hosts via a configuration file, handles static file serving, file uploads,
-directory listing, HTTP redirections, GET, POST, DELETE, and CGI execution (e.g., PHP, Python). It is designed
-to remain resilient and available under heavy load.
+libraries. The server is non-blocking, event-driven, it usese single-poll() event loop, chunked transfer decoding, and NGINX-inspired configuration, handles static file serving, file uploads,
+directory listing, HTTP redirections, GET, POST, DELETE, and dynamic CGI execution (PHP, Python, Perl). It is designed
+to remain resilient and available under heavy loads.
 
 ## Instructions
 
